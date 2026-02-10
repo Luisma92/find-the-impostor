@@ -32,6 +32,14 @@ export default function MultiplayerWordRevealPhase() {
   const isHost = currentPlayerId === gameState.hostId;
   const hasRevealed = currentPlayer?.hasRevealed || false;
 
+  // Reset card state when game restarts (detected by word change)
+  useEffect(() => {
+    setIsCardFlipped(false);
+    setRandomHint("");
+    setAllRevealed(false);
+    setIsStartingDiscussion(false);
+  }, [gameState.currentWord]);
+
   // Listen for player revealed updates
   useEffect(() => {
     const handlePlayerRevealedUpdate = (data: {
