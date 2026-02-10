@@ -28,8 +28,6 @@ function initializeSocketServer(server) {
   server.io = io;
 
   io.on("connection", socket => {
-    console.log("Client connected:", socket.id);
-
     // Create room
     socket.on("create-room", (data, callback) => {
       try {
@@ -37,10 +35,6 @@ function initializeSocketServer(server) {
         socket.join(room.code);
         socket.roomCode = room.code;
         socket.playerId = socket.id;
-
-        console.log(
-          `Room created: ${room.code} by ${data.hostName} (${socket.id})`,
-        );
 
         callback({
           success: true,
@@ -82,11 +76,6 @@ function initializeSocketServer(server) {
         socket.join(data.roomCode);
         socket.roomCode = data.roomCode;
         socket.playerId = socket.id;
-
-        console.log(
-          `${data.playerName} (${socket.id}) joined room ${data.roomCode}`,
-        );
-
         // Notify others in the room
         socket.to(data.roomCode).emit("player-joined", {
           playerId: socket.id,
@@ -151,11 +140,32 @@ function initializeSocketServer(server) {
           players[shuffledIndexes[i]].hasRevealed = false;
         }
 
+        // Sync updated players back to room.players Map
+        // Create SEPARATE copies for Map to avoid shared references
+        players.forEach(player => {
+          room.players.set(player.id, {
+            id: player.id,
+            name: player.name,
+            isConnected: player.isConnected,
+            role: player.role,
+            hasRevealed: player.hasRevealed,
+          });
+        });
+
+        // Create SEPARATE copies for gameState to avoid shared references
+        const playersForGameState = players.map(p => ({
+          id: p.id,
+          name: p.name,
+          isConnected: p.isConnected,
+          role: p.role,
+          hasRevealed: p.hasRevealed,
+        }));
+
         // Update game state with word and players
         const updatedRoom = roomManager.updateGameState(roomCode, {
           gameStarted: true,
           phase: "wordreveal",
-          players,
+          players: playersForGameState,
           currentWord: config.currentWord,
           currentHints: config.currentHints,
           currentCategory: config.currentCategory,
@@ -175,18 +185,22 @@ function initializeSocketServer(server) {
           return;
         }
 
-        console.log(
-          `Game started in room ${roomCode} with word: ${config.currentWord}`,
-        );
-        console.log("Game state being sent to players:", updatedRoom.gameState);
-        console.log(
-          "Players in room:",
-          Array.from(room.players.values()).map(p => p.name),
-        );
+        // Create a deep copy of players to send to clients
+        // This prevents future mutations from affecting the sent data
+        const playersForClient = updatedRoom.gameState.players.map(p => ({
+          id: p.id,
+          name: p.name,
+          role: p.role,
+          isConnected: p.isConnected,
+          hasRevealed: p.hasRevealed,
+        }));
 
         // Notify all players including the host
         io.in(roomCode).emit("game-started", {
-          gameState: updatedRoom.gameState,
+          gameState: {
+            ...updatedRoom.gameState,
+            players: playersForClient,
+          },
         });
 
         callback({ success: true });
@@ -213,19 +227,19 @@ function initializeSocketServer(server) {
           return;
         }
 
-        console.log(`Player ${playerId} revealed in room ${roomCode}`);
-        console.log(
-          "Players revealed status:",
-          Array.from(room.players.values()).map(p => ({
-            name: p.name,
-            revealed: p.hasRevealed,
-          })),
-        );
+        // Get fresh player array from the Map to ensure sync
+        const playersToSend = Array.from(room.players.values()).map(p => ({
+          id: p.id,
+          name: p.name,
+          role: p.role,
+          isConnected: p.isConnected,
+          hasRevealed: p.hasRevealed,
+        }));
 
         // Notify all players about the reveal, including the player who revealed
         io.in(roomCode).emit("player-revealed-update", {
           playerId,
-          players: Array.from(room.players.values()),
+          players: playersToSend,
         });
 
         callback({ success: true });
@@ -239,13 +253,6 @@ function initializeSocketServer(server) {
     socket.on("change-phase", (phase, callback) => {
       try {
         const roomCode = socket.roomCode;
-
-        console.log(
-          `🔄 change-phase called by ${socket.id} for phase: ${phase}`,
-        );
-        console.log(`   Socket roomCode: ${roomCode}`);
-        console.log(`   Socket rooms:`, Array.from(socket.rooms));
-
         if (!roomCode) {
           callback({ success: false, error: "Not in a room" });
           return;
@@ -270,9 +277,6 @@ function initializeSocketServer(server) {
           const players = Array.from(room.players.values());
           const startPlayerIndex = Math.floor(Math.random() * players.length);
           update.startingPlayerId = players[startPlayerIndex].id;
-          console.log(
-            `Selected starting player: ${players[startPlayerIndex].name} (${update.startingPlayerId})`,
-          );
         }
 
         const updatedRoom = roomManager.updateGameState(roomCode, update);
@@ -282,21 +286,8 @@ function initializeSocketServer(server) {
           return;
         }
 
-        console.log(`✅ Phase changed to ${phase} in room ${roomCode}`);
-        console.log(`📤 Emitting phase-changed to room:`, {
-          phase,
-          gameState: {
-            phase: updatedRoom.gameState.phase,
-            players: updatedRoom.gameState.players.length,
-          },
-        });
-
         // Check how many sockets are in the room
-        const socketsInRoom = io.sockets.adapter.rooms.get(roomCode);
-        console.log(
-          `   👥 Sockets in room ${roomCode}:`,
-          socketsInRoom ? socketsInRoom.size : 0,
-        );
+        // const socketsInRoom = io.sockets.adapter.rooms.get(roomCode);
 
         // Notify all players including the host
         io.in(roomCode).emit("phase-changed", {
@@ -304,7 +295,6 @@ function initializeSocketServer(server) {
           gameState: updatedRoom.gameState,
         });
 
-        console.log(`✔️ Event emitted successfully, sending callback`);
         callback({ success: true });
       } catch (error) {
         console.error("Error changing phase:", error);
@@ -336,8 +326,6 @@ function initializeSocketServer(server) {
         const impostors = room.gameState.players.filter(
           p => p.role === "impostor",
         );
-
-        console.log(`Impostor revealed in room ${roomCode}`);
 
         // Notify all players including the host
         io.in(roomCode).emit("impostor-revealed", {
@@ -395,8 +383,11 @@ function initializeSocketServer(server) {
         const players = Array.from(room.players.values());
 
         // Reset all player states for the new game
+        // IMPORTANT: Create truly new objects to avoid reference issues
         const resetPlayers = players.map(player => ({
-          ...player,
+          id: player.id,
+          name: player.name,
+          isConnected: player.isConnected,
           role: "player",
           hasRevealed: false,
         }));
@@ -425,10 +416,25 @@ function initializeSocketServer(server) {
         }
 
         // Update room.players Map with reset states
-        // This is crucial to ensure hasRevealed is properly reset
+        // Create SEPARATE copies for Map to avoid shared references
         resetPlayers.forEach(player => {
-          room.players.set(player.id, player);
+          room.players.set(player.id, {
+            id: player.id,
+            name: player.name,
+            isConnected: player.isConnected,
+            role: player.role,
+            hasRevealed: player.hasRevealed,
+          });
         });
+
+        // Create SEPARATE copies for gameState to avoid shared references
+        const playersForGameState = resetPlayers.map(p => ({
+          id: p.id,
+          name: p.name,
+          isConnected: p.isConnected,
+          role: p.role,
+          hasRevealed: p.hasRevealed,
+        }));
 
         // Update room with new game state
         const updatedRoom = roomManager.updateGameState(roomCode, {
@@ -439,7 +445,7 @@ function initializeSocketServer(server) {
           difficulty: gameConfig.complexity,
           showHintsToImpostors: gameConfig.showHintsToImpostors,
           impostorCount: gameConfig.impostorCount,
-          players: resetPlayers,
+          players: playersForGameState,
           phase: "wordreveal",
           gameStarted: true,
           currentRevealIndex: 0,
@@ -450,13 +456,22 @@ function initializeSocketServer(server) {
           return;
         }
 
-        console.log(
-          `Game restarted in room ${roomCode} with ${playerCount} players and ${impostorCount} impostors`,
-        );
+        // Create a deep copy of players to send to clients
+        // This prevents mutations from affecting the sent data
+        const playersForClient = updatedRoom.gameState.players.map(p => ({
+          id: p.id,
+          name: p.name,
+          role: p.role,
+          isConnected: p.isConnected,
+          hasRevealed: p.hasRevealed,
+        }));
 
         // Notify all players including the host that the game has been restarted
         io.in(roomCode).emit("game-started", {
-          gameState: updatedRoom.gameState,
+          gameState: {
+            ...updatedRoom.gameState,
+            players: playersForClient,
+          },
         });
 
         callback({ success: true });
@@ -480,8 +495,6 @@ function initializeSocketServer(server) {
       const roomCode = socket.roomCode;
       const playerId = socket.playerId;
 
-      console.log(`Player ${playerId} leaving room ${roomCode}`);
-
       if (roomCode && playerId) {
         // Leave the socket.io room
         socket.leave(roomCode);
@@ -489,7 +502,6 @@ function initializeSocketServer(server) {
         const roomDeleted = roomManager.leaveRoom(roomCode, playerId);
 
         if (roomDeleted) {
-          console.log(`Room ${roomCode} deleted (host left or empty)`);
           io.in(roomCode).emit("room-closed", {
             message: "Host left the room",
           });
@@ -514,13 +526,10 @@ function initializeSocketServer(server) {
       const roomCode = socket.roomCode;
       const playerId = socket.playerId;
 
-      console.log("Client disconnected:", socket.id);
-
       if (roomCode && playerId) {
         const roomDeleted = roomManager.leaveRoom(roomCode, playerId);
 
         if (roomDeleted) {
-          console.log(`Room ${roomCode} deleted (host left or empty)`);
           io.in(roomCode).emit("room-closed", {
             message: "Host left the room",
           });
@@ -548,7 +557,6 @@ function initializeSocketServer(server) {
     30 * 60 * 1000,
   );
 
-  console.log("Socket.IO server initialized");
   return io;
 }
 
