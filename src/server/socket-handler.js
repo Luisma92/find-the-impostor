@@ -424,17 +424,25 @@ function initializeSocketServer(server) {
           resetPlayers[playerIndex].role = "impostor";
         }
 
+        // Update room.players Map with reset states
+        // This is crucial to ensure hasRevealed is properly reset
+        resetPlayers.forEach(player => {
+          room.players.set(player.id, player);
+        });
+
         // Update room with new game state
         const updatedRoom = roomManager.updateGameState(roomCode, {
           currentWord: gameConfig.currentWord,
-          category: gameConfig.category,
-          useAI: gameConfig.useAI,
-          complexity: gameConfig.complexity,
+          currentHints: gameConfig.aiHints,
+          currentCategory: gameConfig.category,
+          selectedCategories: gameConfig.selectedCategories,
+          difficulty: gameConfig.complexity,
+          showHintsToImpostors: gameConfig.showHintsToImpostors,
           impostorCount: gameConfig.impostorCount,
-          aiHints: gameConfig.aiHints,
           players: resetPlayers,
           phase: "wordreveal",
           gameStarted: true,
+          currentRevealIndex: 0,
         });
 
         if (!updatedRoom) {
