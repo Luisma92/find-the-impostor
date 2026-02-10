@@ -5,9 +5,11 @@ export type Difficulty = "easy" | "medium" | "hard";
 export type TranslationFunction = (key: string) => string;
 
 export interface Player {
-  id: number;
+  id: string;
   name: string;
   role: "player" | "impostor";
+  isConnected?: boolean;
+  hasRevealed?: boolean;
 }
 
 export interface WordWithHints {
@@ -38,4 +40,54 @@ export interface GameState {
   showHintsToImpostors: boolean;
   currentRevealIndex: number;
   gameStarted: boolean;
+  roomCode?: string;
+  hostId?: string;
+  isMultiplayer?: boolean;
+  startingPlayerId?: string; // Player who starts the discussion phase
+}
+
+// Multiplayer types
+export interface Room {
+  code: string;
+  hostId: string;
+  players: Map<string, Player>;
+  gameState: GameState;
+  createdAt: Date;
+}
+
+export interface JoinRoomData {
+  roomCode: string;
+  playerName: string;
+}
+
+export interface CreateRoomData {
+  hostName: string;
+}
+
+export interface RoomUpdateData {
+  roomCode: string;
+  gameState: Partial<GameState>;
+}
+
+export interface PlayerConnectedData {
+  playerId: string;
+  playerName: string;
+}
+
+export interface PlayerDisconnectedData {
+  playerId: string;
+}
+
+export interface GameStartedData {
+  gameState: GameState;
+}
+
+export interface ImpostorRevealedData {
+  impostors: Player[];
+}
+
+export interface NotificationData {
+  type: "info" | "success" | "warning" | "error";
+  message: string;
+  title?: string;
 }

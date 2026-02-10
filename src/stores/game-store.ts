@@ -14,6 +14,7 @@ interface GameStore {
   playerNames: string[];
   customCategories: string[];
   _hasHydrated: boolean;
+  currentPlayerId: string | null;
   setHasHydrated: (state: boolean) => void;
 
   setPlayerCount: (count: number, t: TranslationFunction) => void;
@@ -25,6 +26,18 @@ interface GameStore {
   setCustomCategory: (category: string) => void;
   removeCustomCategory: (category: string) => void;
   toggleHints: () => void;
+
+  // Multiplayer functions
+  setRoomData: (
+    roomCode: string,
+    playerId: string,
+    hostId: string,
+    isHost: boolean,
+  ) => void;
+  setIsMultiplayer: (isMultiplayer: boolean) => void;
+  updateGameStateFromServer: (gameState: Partial<GameState>) => void;
+  updatePlayers: (players: Player[]) => void;
+  setCurrentPlayerId: (playerId: string) => void;
 
   startGame: (t: TranslationFunction, language: Locale) => Promise<void>;
   nextRevealPlayer: () => void;
@@ -56,6 +69,7 @@ export const useGameStore = create<GameStore>()(
       playerNames: [],
       customCategories: [],
       _hasHydrated: false,
+      currentPlayerId: null,
       setHasHydrated: state => set({ _hasHydrated: state }),
       setPlayerCount: (count, t) => {
         set(state => {
@@ -167,6 +181,46 @@ export const useGameStore = create<GameStore>()(
         }));
       },
 
+      // Multiplayer functions
+      setRoomData: (roomCode, playerId, hostId) => {
+        set(state => ({
+          gameState: {
+            ...state.gameState,
+            roomCode,
+            hostId,
+            isMultiplayer: true,
+          },
+          currentPlayerId: playerId,
+        }));
+      },
+
+      setIsMultiplayer: isMultiplayer => {
+        set(state => ({
+          gameState: { ...state.gameState, isMultiplayer },
+        }));
+      },
+
+      updateGameStateFromServer: gameState => {
+        console.log("updateGameStateFromServer called with:", gameState);
+        set(state => {
+          const newState = {
+            gameState: { ...state.gameState, ...gameState },
+          };
+          console.log("New state after update:", newState);
+          return newState;
+        });
+      },
+
+      updatePlayers: players => {
+        set(state => ({
+          gameState: { ...state.gameState, players },
+        }));
+      },
+
+      setCurrentPlayerId: playerId => {
+        set({ currentPlayerId: playerId });
+      },
+
       setPhase: phase => {
         set(state => ({
           gameState: { ...state.gameState, phase },
@@ -181,12 +235,57 @@ export const useGameStore = create<GameStore>()(
           return;
         }
 
+        // If multiplayer, we'll handle it differently
+        if (gameState.isMultiplayer) {
+          const { socketService } = await import("@/src/lib/socket-service");
+
+          // Generate word first
+          const randomCategory =
+            gameState.selectedCategories[
+              Math.floor(Math.random() * gameState.selectedCategories.length)
+            ];
+          const wordWithHints = await getRandomWordWithHints(
+            randomCategory,
+            language,
+            gameState.difficulty,
+          );
+
+          console.log(
+            `Starting multiplayer game with category: ${randomCategory}, word: ${
+              wordWithHints.word
+            }, hints: ${wordWithHints.hints.join(", ")}`,
+          );
+
+          // Send configuration to server
+          socketService.startGame(
+            {
+              currentWord: wordWithHints.word,
+              currentHints: wordWithHints.hints,
+              currentCategory: randomCategory,
+              selectedCategories: gameState.selectedCategories,
+              difficulty: gameState.difficulty,
+              showHintsToImpostors: gameState.showHintsToImpostors,
+              impostorCount: gameState.impostorCount,
+            },
+            response => {
+              if (!response.success) {
+                console.error("Failed to start game:", response.error);
+              }
+            },
+          );
+
+          return;
+        }
+
+        // Local game logic
         const players: Player[] = Array.from(
           { length: gameState.totalPlayers },
           (_, i) => ({
-            id: i + 1,
+            id: `${i + 1}`,
             name: playerNames[i] || `${t("player")} ${i + 1}`,
             role: "player",
+            isConnected: true,
+            hasRevealed: false,
           }),
         );
 
@@ -272,16 +371,31 @@ export const useGameStore = create<GameStore>()(
       version: 1,
       migrate: (persistedState: unknown, version: number) => {
         const state = persistedState as Partial<GameStore>;
+        const migratedState = {
+          ...state,
+          gameState: {
+            phase: "setup" as const,
+            players: [],
+            currentRevealIndex: 0,
+            currentWord: "",
+            currentHints: [],
+            currentCategory: "",
+            customCategory: "",
+            gameStarted: false,
+            ...state.gameState,
+          },
+        };
+
         if (version === 0) {
           return {
-            ...state,
+            ...migratedState,
             gameState: {
-              ...state.gameState,
-              difficulty: "medium",
+              ...migratedState.gameState,
+              difficulty: "medium" as Difficulty,
             },
           };
         }
-        return state;
+        return migratedState;
       },
       partialize: state => ({
         customCategories: state.customCategories,

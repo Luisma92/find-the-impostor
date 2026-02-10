@@ -1,4 +1,4 @@
-export type Locale = "en" | "de";
+export type Locale = "en" | "de" | "es";
 
 export interface Language {
   value: Locale;
@@ -19,6 +19,12 @@ export const SUPPORTED_LANGUAGES: Language[] = [
     label: "Deutsch",
     flag: "🇦🇹",
     nativeName: "Deutsch",
+  },
+  {
+    value: "es",
+    label: "Español",
+    flag: "🇪🇸",
+    nativeName: "Español",
   },
   // {
   //   value: "fr",

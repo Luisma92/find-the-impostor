@@ -65,6 +65,33 @@ export class PromptEngine {
         },
       },
     },
+    es: {
+      name: "Spanish",
+      culturalNote:
+        "Enfócate en términos universalmente conocidos en países de habla hispana.",
+      examples: {
+        animals: {
+          word: "elefante",
+          hints: ["memoria", "circo", "grande"],
+        },
+        food: {
+          word: "pizza",
+          hints: ["entrega", "triángulo", "adolescente"],
+        },
+        objects: {
+          word: "martillo",
+          hints: ["juez", "trueno", "construcción"],
+        },
+        places: {
+          word: "biblioteca",
+          hints: ["silencio", "vencido", "investigación"],
+        },
+        professions: {
+          word: "chef",
+          hints: ["temperatura", "creatividad", "blanco"],
+        },
+      },
+    },
   };
 
   private static readonly DIFFICULTY_MODIFIERS = {

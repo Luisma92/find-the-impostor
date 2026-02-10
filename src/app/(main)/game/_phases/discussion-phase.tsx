@@ -1,20 +1,66 @@
 import { Button } from "@/src/components/ui/button";
 import { useSound } from "@/src/hooks/use-sound";
+import { socketService } from "@/src/lib/socket-service";
 import { useGameStore } from "@/src/stores/game-store";
 import { Eye, Play } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
+import { toast } from "sonner";
 
 export default function DiscussionPhase() {
-  const { gameState, endGame } = useGameStore();
+  const { gameState, endGame, currentPlayerId } = useGameStore();
   const t = useTranslations("DiscussionPhase");
+  const tError = useTranslations("DiscussionPhase");
   const playImpostorSound = useSound("/sounds/impostor-sound.mp3", 1);
-  const startPlayerIndex = Math.floor(Math.random() * gameState.players.length);
-  const startPlayer = gameState.players[startPlayerIndex];
+
+  // For multiplayer, use the server-selected starting player
+  // For local mode, randomly select a player
+  const isMultiplayer = gameState.isMultiplayer;
+  let startPlayer;
+
+  if (isMultiplayer && gameState.startingPlayerId) {
+    // Use server-selected player for multiplayer
+    startPlayer = gameState.players.find(
+      p => p.id === gameState.startingPlayerId,
+    );
+    console.log(
+      "Starting player from server:",
+      startPlayer?.name,
+      gameState.startingPlayerId,
+    );
+  }
+
+  // Fallback: randomly select if not found (for local mode or backwards compatibility)
+  if (!startPlayer) {
+    const startPlayerIndex = Math.floor(
+      Math.random() * gameState.players.length,
+    );
+    startPlayer = gameState.players[startPlayerIndex];
+    console.log("Starting player randomly selected:", startPlayer.name);
+  }
+
+  const isHost = currentPlayerId === gameState.hostId;
 
   useEffect(() => {
     playImpostorSound();
   }, [playImpostorSound]);
+
+  const handleRevealImpostor = useCallback(() => {
+    if (isMultiplayer) {
+      if (!isHost) {
+        toast.error(tError("onlyHostCanReveal"));
+        return;
+      }
+
+      socketService.revealImpostor(response => {
+        if (!response.success) {
+          toast.error(response.error || tError("failedToReveal"));
+        }
+      });
+    } else {
+      endGame();
+    }
+  }, [isMultiplayer, isHost, endGame, tError]);
 
   return (
     <div className="flex h-dvh items-center justify-center p-6">
@@ -35,13 +81,22 @@ export default function DiscussionPhase() {
           </div>
         </div>
 
-        <Button
-          onClick={endGame}
-          className="w-full rounded-xl bg-red-600 py-6 text-lg font-medium text-white transition-all duration-200 hover:bg-red-700"
-        >
-          <Eye className="mr-3 h-5 w-5" />
-          {t("revealImpostor")}
-        </Button>
+        <div className="space-y-3">
+          <Button
+            onClick={handleRevealImpostor}
+            disabled={isMultiplayer && !isHost}
+            className="w-full rounded-xl bg-red-600 py-6 text-lg font-medium text-white transition-all duration-200 hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Eye className="mr-3 h-5 w-5" />
+            {t("revealImpostor")}
+          </Button>
+
+          {isMultiplayer && !isHost && (
+            <p className="text-sm text-zinc-500">
+              {tError("waitingForHostToRevealImpostor")}
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );

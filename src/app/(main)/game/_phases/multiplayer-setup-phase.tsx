@@ -1,3 +1,5 @@
+"use client";
+
 import { IconBox } from "../_components/icon-box";
 import LanguageSelector from "../_components/language-selector";
 import { Button } from "@/src/components/ui/button";
@@ -18,38 +20,39 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { Separator } from "@/src/components/ui/separator";
-import { Locale } from "@/src/config/language";
 import { setUserLocale } from "@/src/lib/locale";
 import { useGameStore } from "@/src/stores/game-store";
 import { Difficulty } from "@/src/types/game";
 import { ArrowLeft, Plus, Settings, Tag, User, X } from "lucide-react";
-import { useLocale, useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
-import { toast } from "sonner";
 
-export default function SetupPhase() {
+interface MultiplayerSetupPhaseProps {
+  onBack: () => void;
+  onCreateRoom: (hostName: string) => void;
+}
+
+export default function MultiplayerSetupPhase({
+  onBack,
+  onCreateRoom,
+}: MultiplayerSetupPhaseProps) {
   const {
     gameState,
-    playerNames,
     customCategories,
     setPlayerCount,
-    setPlayerName,
     setImpostorCount,
     toggleCategory,
     addCustomCategory,
     removeCustomCategory,
     setCustomCategory,
     toggleHints,
-    startGame,
     setDifficulty,
   } = useGameStore();
 
-  const [isStarting, setIsStarting] = useState(false);
+  const [hostName, setHostName] = useState("");
   const t = useTranslations("SetupPhase");
-  const tError = useTranslations("Error");
-  const router = useRouter();
-  const locale = useLocale() as Locale;
+  const tSetup = useTranslations("MultiplayerSetup");
+
   const categoryTranslations = {
     animals: `🐾 ${t("animals")}`,
     food: `🍕 ${t("food")}`,
@@ -70,30 +73,26 @@ export default function SetupPhase() {
     { value: "hard", label: t("hard") },
   ];
 
-  const handleStartGame = async () => {
-    try {
-      if (isStarting) return;
-      if (gameState.gameStarted) return;
-      setIsStarting(true);
-      await startGame(t, locale);
-    } catch (error) {
-      console.error(error);
-      toast.error(tError("somethingWentWrong"));
-    } finally {
-      setIsStarting(false);
-    }
-  };
-
   const handleAddCustomCategory = () => {
     if (gameState.customCategory.trim()) {
       addCustomCategory(gameState.customCategory.trim());
     }
   };
 
+  const handleCreateRoom = () => {
+    if (!hostName.trim()) {
+      return;
+    }
+    if (gameState.selectedCategories.length === 0) {
+      return;
+    }
+    onCreateRoom(hostName.trim());
+  };
+
   return (
     <div className="min-h-screen p-6 text-white">
       <Button
-        onClick={() => router.push("/")}
+        onClick={onBack}
         variant="ghost"
         size="icon"
         className="absolute top-6 left-2 z-10"
@@ -102,9 +101,36 @@ export default function SetupPhase() {
       </Button>
       <div className="mx-auto max-w-2xl space-y-8">
         <div className="space-y-2 text-center">
-          <h1 className="text-4xl font-bold">{t("gameSetup")}</h1>
-          <p className="text-sm text-zinc-400">{t("configureSettings")}</p>
+          <h1 className="text-4xl font-bold">{tSetup("title")}</h1>
+          <p className="text-sm text-zinc-400">{tSetup("subtitle")}</p>
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-3 text-lg font-medium">
+              <IconBox icon={User} color="blue" />
+              {tSetup("yourName")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label
+                htmlFor="host-name"
+                className="text-sm font-medium text-zinc-300"
+              >
+                {tSetup("enterNameAsHost")}
+              </Label>
+              <Input
+                id="host-name"
+                placeholder={tSetup("yourNamePlaceholder")}
+                value={hostName}
+                onChange={e => setHostName(e.target.value)}
+                maxLength={20}
+                className="mt-2 border-zinc-700 bg-zinc-800/50 text-white"
+              />
+            </div>
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>
@@ -116,7 +142,7 @@ export default function SetupPhase() {
           <CardContent className="space-y-4">
             <div className="flex items-center gap-3">
               <Label className="text-sm font-medium text-zinc-300">
-                {t("numberOfPlayers")}
+                {tSetup("maximumPlayers")}
               </Label>
               <Select
                 value={gameState.totalPlayers.toString()}
@@ -138,24 +164,7 @@ export default function SetupPhase() {
                 </SelectContent>
               </Select>
             </div>
-
-            <div className="space-y-3">
-              <Label className="text-sm font-medium text-zinc-300">
-                {t("playerNames")}
-              </Label>
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                {Array.from({ length: gameState.totalPlayers }, (_, i) => (
-                  <Input
-                    key={`player-${gameState.totalPlayers}-${i}`}
-                    placeholder={`${t("player")} ${i + 1}`}
-                    value={playerNames[i] || ""}
-                    onChange={e => setPlayerName(i, e.target.value)}
-                    onFocus={e => e.target.select()}
-                    className="text-white transition-colors placeholder:text-zinc-500 focus:border-blue-400"
-                  />
-                ))}
-              </div>
-            </div>
+            <p className="text-sm text-zinc-400">{tSetup("playersWillJoin")}</p>
           </CardContent>
         </Card>
 
@@ -171,7 +180,7 @@ export default function SetupPhase() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div className="space-y-3">
                 <Label className="text-sm font-medium text-zinc-300">
-                  🎭 {t("impostors")}
+                  🎭 {tSetup("impostors")}
                 </Label>
                 <Select
                   value={gameState.impostorCount.toString()}
@@ -186,9 +195,10 @@ export default function SetupPhase() {
                       (_, i) => i + 1,
                     ).map(num => (
                       <SelectItem key={num} value={num.toString()}>
+                        {num}{" "}
                         {num > 1
-                          ? t("impostorCountPlural", { count: num })
-                          : t("impostorCount", { count: num })}
+                          ? tSetup("impostorPlural")
+                          : tSetup("impostor")}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -335,12 +345,26 @@ export default function SetupPhase() {
         </Card>
 
         <Button
-          onClick={handleStartGame}
-          disabled={isStarting || gameState.selectedCategories.length === 0}
+          onClick={handleCreateRoom}
+          disabled={
+            gameState.selectedCategories.length === 0 || !hostName.trim()
+          }
           className="w-full rounded-xl bg-blue-600 py-6 text-lg font-medium text-white transition-all duration-200 hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-zinc-700"
         >
-          {isStarting ? t("generateWords") : t("startGame")}
+          {tSetup("createRoom")}
         </Button>
+
+        {!hostName.trim() && (
+          <p className="text-center text-sm text-zinc-400">
+            {tSetup("pleaseEnterNameToContinue")}
+          </p>
+        )}
+
+        {gameState.selectedCategories.length === 0 && hostName.trim() && (
+          <p className="text-center text-sm text-red-400">
+            {tSetup("pleaseSelectCategory")}
+          </p>
+        )}
       </div>
     </div>
   );

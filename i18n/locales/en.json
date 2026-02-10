@@ -38,7 +38,11 @@
     "difficulty": "Difficulty",
     "easy": "Easy",
     "medium": "Medium",
-    "hard": "Hard"
+    "hard": "Hard",
+    "impostors": "Impostors",
+    "impostor": "Impostor",
+    "impostorCount": "{count} Impostor",
+    "impostorCountPlural": "{count} Impostors"
   },
   "WordRevealPhase": {
     "chooseYourCard": "Choose Your Card",
@@ -60,15 +64,104 @@
   "DiscussionPhase": {
     "sayYourWords": "Say Your Words",
     "starts": "starts",
-    "revealImpostor": "Reveal Impostor"
+    "revealImpostor": "Reveal Impostor",
+    "onlyHostCanReveal": "Only the host can reveal the impostor",
+    "failedToReveal": "Failed to reveal impostor",
+    "waitingForHostToRevealImpostor": "Waiting for host to reveal the impostor..."
   },
   "ResultsPhase": {
     "results": "Results",
     "theWordWas": "The Word Was",
     "newGame": "New Game",
-    "category": "Category"
+    "category": "Category",
+    "impostor": "Impostor",
+    "impostors": "Impostors",
+    "backToMenu": "Back to Menu",
+    "returnToMenu": "Returning to game menu",
+    "waitingForHost": "Waiting for host..."
   },
   "Error": {
     "somethingWentWrong": "Something went wrong, please try again."
+  },
+  "GamePage": {
+    "selectGameMode": "Select Game Mode",
+    "localGame": "Local Game",
+    "localGameDescription": "All players share one device",
+    "createOnlineRoom": "Create Online Room",
+    "createOnlineRoomDescription": "Host a game for others to join",
+    "joinWithCode": "Join with Code",
+    "joinWithCodeDescription": "Enter a room code to join",
+    "gameStarted": "Game started!",
+    "impostorRevealed": "The impostor has been revealed!",
+    "roomCreated": "Room created: {code}",
+    "failedToCreateRoom": "Failed to create room",
+    "failedToStartGame": "Failed to start game"
+  },
+  "MultiplayerLobby": {
+    "connectingToServer": "Connecting to server...",
+    "pleaseWaitConnection": "Please wait while we establish connection",
+    "room": "Room:",
+    "youAreHost": "You are the host",
+    "waitingForHost": "Waiting for host to start",
+    "players": "Players",
+    "host": "Host",
+    "you": "You",
+    "waitingForMorePlayers": "Waiting for more players...",
+    "shareCode": "Share code:",
+    "leaveRoom": "Leave Room",
+    "startGame": "Start Game ({count}/{total})",
+    "waitingForHostToStart": "Waiting for host to start the game...",
+    "creatingRoom": "Creating room...",
+    "settingUpRoom": "Please wait while we set up your game room",
+    "joinRoom": "Join Room",
+    "yourName": "Your Name",
+    "roomCode": "Room Code",
+    "enterYourName": "Enter your name",
+    "enterRoomCode": "Enter 6-digit code",
+    "back": "Back",
+    "joining": "Joining...",
+    "multiplayerMode": "Multiplayer Mode",
+    "playerJoined": "{name} joined the room",
+    "playerLeft": "A player left the room",
+    "pleaseEnterName": "Please enter your name",
+    "pleaseEnterRoomCode": "Please enter room code",
+    "joinedSuccessfully": "Joined room successfully",
+    "failedToJoin": "Failed to join room",
+    "onlyHostCanStart": "Only the host can start the game",
+    "needMinPlayers": "Need at least {min} players to start",
+    "roomCodeCopied": "Room code copied!",
+    "copyRoomCode": "Copy room code"
+  },
+  "MultiplayerSetup": {
+    "title": "Multiplayer Setup",
+    "subtitle": "Configure game settings, then create a room",
+    "yourName": "Your Name",
+    "enterNameAsHost": "Enter your name (as the host)",
+    "yourNamePlaceholder": "Your name",
+    "maximumPlayers": "Maximum Players",
+    "playersWillJoin": "Players will join the lobby with their names after you create the room",
+    "impostors": "Impostors",
+    "impostor": "Impostor",
+    "impostorPlural": "Impostors",
+    "createRoom": "Create Room",
+    "pleaseEnterNameToContinue": "Please enter your name to continue",
+    "pleaseSelectCategory": "Please select at least one category"
+  },
+  "MultiplayerWordReveal": {
+    "cardRevealed": "Card revealed!",
+    "failedToRevealCard": "Failed to reveal card",
+    "onlyHostCanStartDiscussion": "Only the host can start the discussion",
+    "discussionStarted": "Discussion started!",
+    "failedToStartDiscussion": "Failed to start discussion",
+    "playerNotFound": "Player not found...",
+    "allCardsRevealed": "All Cards Revealed!",
+    "youCanStartDiscussion": "You can start the discussion now",
+    "waitingForHostToStartDiscussion": "Waiting for host to start discussion...",
+    "waitingForOtherPlayers": "Waiting for other players...",
+    "of": "of",
+    "playersRevealed": "players revealed"
+  },
+  "Common": {
+    "impostorLogo": "Impostor Logo"
   }
 }

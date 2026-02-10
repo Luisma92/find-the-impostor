@@ -5,6 +5,7 @@ import Link from "next/link";
 
 export default function Home() {
   const t = useTranslations("Index");
+  const tCommon = useTranslations("Common");
   return (
     <div className="bg-charcoal flex h-dvh max-h-dvh flex-col">
       <div className="container mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center px-4 text-center">
@@ -16,7 +17,7 @@ export default function Home() {
         <div className="relative mx-auto size-80">
           <Image
             src="/images/impostor-logo.webp"
-            alt="Impostor Logo"
+            alt={tCommon("impostorLogo")}
             fill
             sizes="320px"
             className="object-contain"

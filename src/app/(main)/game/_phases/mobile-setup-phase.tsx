@@ -190,7 +190,7 @@ export default function MobileSetupPhase() {
                   </div>
                   <div>
                     <div className="text-lg font-medium text-white">
-                      Impostors
+                      {t("impostors")}
                     </div>
                     <div className="text-sm text-gray-400">
                       {gameState.impostorCount} {t("of")}{" "}

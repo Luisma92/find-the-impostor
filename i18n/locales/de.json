@@ -38,7 +38,11 @@
     "difficulty": "Schwierigkeitsgrad",
     "easy": "Einfach",
     "medium": "Mittel",
-    "hard": "Schwer"
+    "hard": "Schwer",
+    "impostors": "Hochstapler",
+    "impostor": "Hochstapler",
+    "impostorCount": "{count} Hochstapler",
+    "impostorCountPlural": "{count} Hochstapler"
   },
   "WordRevealPhase": {
     "chooseYourCard": "Wähle deine Karte",
@@ -60,15 +64,104 @@
   "DiscussionPhase": {
     "sayYourWords": "Sagt eure Wörter",
     "starts": "beginnt",
-    "revealImpostor": "Impostor aufdecken"
+    "revealImpostor": "Impostor aufdecken",
+    "onlyHostCanReveal": "Nur der Host kann den Hochstapler aufdecken",
+    "failedToReveal": "Hochstapler konnte nicht aufgedeckt werden",
+    "waitingForHostToRevealImpostor": "Warte darauf, dass der Host den Hochstapler aufdeckt..."
   },
   "ResultsPhase": {
     "results": "Ergebnisse",
     "theWordWas": "Das Wort war",
     "newGame": "Neues Spiel",
-    "category": "Kategorie"
+    "category": "Kategorie",
+    "impostor": "Hochstapler",
+    "impostors": "Hochstapler",
+    "backToMenu": "Zurück zum Menü",
+    "returnToMenu": "Zurückkehr zum Spielmenü",
+    "waitingForHost": "Warte auf Host..."
   },
   "Error": {
     "somethingWentWrong": "Etwas ist schief gelaufen, bitte versuche es erneut."
+  },
+  "GamePage": {
+    "selectGameMode": "Spielmodus wählen",
+    "localGame": "Lokales Spiel",
+    "localGameDescription": "Alle Spieler teilen sich ein Gerät",
+    "createOnlineRoom": "Online-Raum erstellen",
+    "createOnlineRoomDescription": "Ein Spiel hosten, dem andere beitreten können",
+    "joinWithCode": "Mit Code beitreten",
+    "joinWithCodeDescription": "Gib einen Raumcode ein, um beizutreten",
+    "gameStarted": "Spiel gestartet!",
+    "impostorRevealed": "Der Hochstapler wurde aufgedeckt!",
+    "roomCreated": "Raum erstellt: {code}",
+    "failedToCreateRoom": "Raum konnte nicht erstellt werden",
+    "failedToStartGame": "Spiel konnte nicht gestartet werden"
+  },
+  "MultiplayerLobby": {
+    "connectingToServer": "Verbinde mit Server...",
+    "pleaseWaitConnection": "Bitte warten, während wir die Verbindung herstellen",
+    "room": "Raum:",
+    "youAreHost": "Du bist der Host",
+    "waitingForHost": "Warte auf Host zum Starten",
+    "players": "Spieler",
+    "host": "Host",
+    "you": "Du",
+    "waitingForMorePlayers": "Warte auf weitere Spieler...",
+    "shareCode": "Code teilen:",
+    "leaveRoom": "Raum verlassen",
+    "startGame": "Spiel starten ({count}/{total})",
+    "waitingForHostToStart": "Warte darauf, dass der Host das Spiel startet...",
+    "creatingRoom": "Raum wird erstellt...",
+    "settingUpRoom": "Bitte warten, während wir deinen Spielraum einrichten",
+    "joinRoom": "Raum beitreten",
+    "yourName": "Dein Name",
+    "roomCode": "Raumcode",
+    "enterYourName": "Gib deinen Namen ein",
+    "enterRoomCode": "Gib den 6-stelligen Code ein",
+    "back": "Zurück",
+    "joining": "Trete bei...",
+    "multiplayerMode": "Mehrspieler-Modus",
+    "playerJoined": "{name} ist dem Raum beigetreten",
+    "playerLeft": "Ein Spieler hat den Raum verlassen",
+    "pleaseEnterName": "Bitte gib deinen Namen ein",
+    "pleaseEnterRoomCode": "Bitte gib den Raumcode ein",
+    "joinedSuccessfully": "Erfolgreich dem Raum beigetreten",
+    "failedToJoin": "Beitritt zum Raum fehlgeschlagen",
+    "onlyHostCanStart": "Nur der Host kann das Spiel starten",
+    "needMinPlayers": "Mindestens {min} Spieler erforderlich",
+    "roomCodeCopied": "Raumcode kopiert!",
+    "copyRoomCode": "Raumcode kopieren"
+  },
+  "MultiplayerSetup": {
+    "title": "Mehrspieler-Einrichtung",
+    "subtitle": "Konfiguriere die Spieleinstellungen und erstelle dann einen Raum",
+    "yourName": "Dein Name",
+    "enterNameAsHost": "Gib deinen Namen ein (als Host)",
+    "yourNamePlaceholder": "Dein Name",
+    "maximumPlayers": "Maximale Spieleranzahl",
+    "playersWillJoin": "Spieler treten der Lobby mit ihren Namen bei, nachdem du den Raum erstellt hast",
+    "impostors": "Hochstapler",
+    "impostor": "Hochstapler",
+    "impostorPlural": "Hochstapler",
+    "createRoom": "Raum erstellen",
+    "pleaseEnterNameToContinue": "Bitte gib deinen Namen ein, um fortzufahren",
+    "pleaseSelectCategory": "Bitte wähle mindestens eine Kategorie aus"
+  },
+  "MultiplayerWordReveal": {
+    "cardRevealed": "Karte aufgedeckt!",
+    "failedToRevealCard": "Karte konnte nicht aufgedeckt werden",
+    "onlyHostCanStartDiscussion": "Nur der Host kann die Diskussion starten",
+    "discussionStarted": "Diskussion gestartet!",
+    "failedToStartDiscussion": "Diskussion konnte nicht gestartet werden",
+    "playerNotFound": "Spieler nicht gefunden...",
+    "allCardsRevealed": "Alle Karten aufgedeckt!",
+    "youCanStartDiscussion": "Sie können die Diskussion jetzt starten",
+    "waitingForHostToStartDiscussion": "Warte darauf, dass der Gastgeber die Diskussion startet...",
+    "waitingForOtherPlayers": "Warte auf andere Spieler...",
+    "of": "von",
+    "playersRevealed": "Spieler aufgedeckt"
+  },
+  "Common": {
+    "impostorLogo": "Hochstapler-Logo"
   }
 }
