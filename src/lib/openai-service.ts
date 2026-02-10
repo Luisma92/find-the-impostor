@@ -1,4 +1,5 @@
 import { WordWithHints } from "@/src/types/game";
+import { OpenRouter } from "@openrouter/sdk";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export interface OpenRouterConfig {
@@ -10,10 +11,20 @@ export interface OpenRouterConfig {
 
 export class OpenAIService {
   private config: OpenRouterConfig;
+  private client: OpenRouter;
   private requestQueue: Map<string, number[]> = new Map();
 
   constructor(config: OpenRouterConfig) {
     this.config = config;
+    this.client = new OpenRouter({
+      apiKey: config.apiKey,
+      baseURL: config.baseUrl,
+      defaultHeaders: {
+        "HTTP-Referer":
+          process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+        "X-Title": "Party Game Word Generator",
+      },
+    });
   }
 
   async generateWords(
@@ -26,59 +37,48 @@ export class OpenAIService {
       retryCount === 0 ? this.config.model : this.config.fallbackModel!;
 
     try {
-      const response = await fetch(`${this.config.baseUrl}/chat/completions`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${this.config.apiKey}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer":
-            process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
-          "X-Title": "Party Game Word Generator",
-        },
-        body: JSON.stringify({
-          model: currentModel,
-          messages: [
-            {
-              role: "system",
-              content: this.getSystemPrompt(),
-            },
-            {
-              role: "user",
-              content: prompt,
-            },
-          ],
-          response_format: {
-            type: "json_object",
+      const completion = await this.client.chat.completions.create({
+        model: currentModel,
+        messages: [
+          {
+            role: "system",
+            content: this.getSystemPrompt(),
           },
-          max_tokens: 1500,
-          temperature: 0.7,
-          top_p: 0.9,
-          frequency_penalty: 0.1, // Encourage variety
-          presence_penalty: 0.1,
-        }),
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+        response_format: {
+          type: "json_object",
+        },
+        max_tokens: 1500,
+        temperature: 0.7,
+        top_p: 0.9,
+        frequency_penalty: 0.1, // Encourage variety
+        presence_penalty: 0.1,
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(
-          `OpenRouter API error (${currentModel}): ${response.status} - ${
-            errorData?.error?.message || response.statusText
-          }`,
-        );
-      }
+      const content = completion.choices[0]?.message?.content;
 
-      const data = await response.json();
-
-      if (!data.choices?.[0]?.message?.content) {
+      if (!content) {
         throw new Error("Invalid response structure from OpenRouter");
       }
+
       try {
-        return JSON.parse(data.choices[0].message.content);
+        return JSON.parse(content);
       } catch (parseError) {
         throw new Error(`Failed to parse JSON response: ${parseError}`);
       }
-    } catch (error) {
-      console.error(`OpenRouter error with ${currentModel}:`, error);
+    } catch (error: any) {
+      // Format error message for consistency
+      const errorMessage =
+        error?.message || error?.error?.message || String(error);
+      const formattedError = new Error(
+        `OpenRouter API error (${currentModel}): ${error?.status || "unknown"} - ${errorMessage}`,
+      );
+
+      console.error(`OpenRouter error with ${currentModel}:`, formattedError);
 
       // Retry with fallback model if available
       if (retryCount < maxRetries && this.config.fallbackModel) {
@@ -88,7 +88,7 @@ export class OpenAIService {
         return this.generateWords(prompt, schema, retryCount + 1);
       }
 
-      throw error;
+      throw formattedError;
     }
   }
 
@@ -114,7 +114,7 @@ HINT QUALITY GUIDELINES:
 EXAMPLE:
 For "elephant" in English:
 - Hint 1: "large"
-- Hint 2: "peanut"  
+- Hint 2: "peanut"
 - Hint 3: "ears"
 
 Always respond with valid JSON matching the requested schema. No additional text or explanations.`;
@@ -179,19 +179,16 @@ Always respond with valid JSON matching the requested schema. No additional text
   }
 }
 
-if (
-  !process.env.OPENAI_API_KEY ||
-  !process.env.OPENAI_API_BASE ||
-  !process.env.LLM_MODEL
-) {
-  throw new Error(
-    "Missing required environment variables: OPENAI_API_KEY and OPENAI_API_BASE and LLM_MODEL",
-  );
-}
-
-export const openAIService = new OpenAIService({
-  apiKey: process.env.OPENAI_API_KEY,
-  baseUrl: process.env.OPENAI_API_BASE,
-  model: process.env.LLM_MODEL,
-  fallbackModel: process.env.LLM_FALLBACK_MODEL,
-});
+// Export null if environment variables are not configured
+// This allows the app to work with fallback words
+export const openAIService =
+  process.env.OPENAI_API_KEY &&
+  process.env.OPENAI_API_BASE &&
+  process.env.LLM_MODEL
+    ? new OpenAIService({
+        apiKey: process.env.OPENAI_API_KEY,
+        baseUrl: process.env.OPENAI_API_BASE,
+        model: process.env.LLM_MODEL,
+        fallbackModel: process.env.LLM_FALLBACK_MODEL,
+      })
+    : null;
