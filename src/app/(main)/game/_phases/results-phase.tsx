@@ -11,7 +11,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 export function ResultsPhase() {
-  const { gameState, newGame, currentPlayerId } = useGameStore();
+  const { gameState, newGame, currentPlayerId, clearRoomData } = useGameStore();
   const t = useTranslations("ResultsPhase");
   const router = useRouter();
   const locale = useLocale() as Locale;
@@ -194,15 +194,36 @@ export function ResultsPhase() {
     if (isMultiplayer) {
       // For multiplayer, disconnect and go back to game selection
 
-      // Leave the room if in one
-      if (gameState.roomCode) {
-        socketService.getSocket()?.emit("leave-room");
-      }
+      if (isHost && gameState.roomCode) {
+        // Host closes the room, which kicks all players out
+        socketService.closeRoom(response => {
+          if (response.success) {
+            clearRoomData();
+            // Reset state and go to game selection
+            newGame();
+            router.push("/game");
+            toast.info(t("returnToMenu"));
+          } else {
+            toast.error(response.error || "Failed to close room");
+          }
+        });
+      } else {
+        // Non-host shouldn't be able to reach here, but handle it gracefully
+        if (gameState.roomCode) {
+          socketService.leaveRoom(response => {
+            if (response.success) {
+              clearRoomData();
+            }
+          });
+        } else {
+          clearRoomData();
+        }
 
-      // Reset state and go to game selection
-      newGame();
-      router.push("/game");
-      toast.info(t("returnToMenu"));
+        // Reset state and go to game selection
+        newGame();
+        router.push("/game");
+        toast.info(t("returnToMenu"));
+      }
     } else {
       // For local mode, just reset the game
       newGame();
