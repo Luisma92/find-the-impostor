@@ -184,8 +184,8 @@ function initializeSocketServer(server) {
           Array.from(room.players.values()).map(p => p.name),
         );
 
-        // Notify all players
-        io.to(roomCode).emit("game-started", {
+        // Notify all players including the host
+        io.in(roomCode).emit("game-started", {
           gameState: updatedRoom.gameState,
         });
 
@@ -222,8 +222,8 @@ function initializeSocketServer(server) {
           })),
         );
 
-        // Notify all players about the reveal (including the one who just revealed)
-        io.to(roomCode).emit("player-revealed-update", {
+        // Notify all players about the reveal, including the player who revealed
+        io.in(roomCode).emit("player-revealed-update", {
           playerId,
           players: Array.from(room.players.values()),
         });
@@ -278,8 +278,8 @@ function initializeSocketServer(server) {
 
         console.log(`Phase changed to ${phase} in room ${roomCode}`);
 
-        // Notify all players
-        io.to(roomCode).emit("phase-changed", {
+        // Notify all players including the host
+        io.in(roomCode).emit("phase-changed", {
           phase,
           gameState: updatedRoom.gameState,
         });
@@ -318,8 +318,8 @@ function initializeSocketServer(server) {
 
         console.log(`Impostor revealed in room ${roomCode}`);
 
-        // Notify all players
-        io.to(roomCode).emit("impostor-revealed", {
+        // Notify all players including the host
+        io.in(roomCode).emit("impostor-revealed", {
           impostors,
           word: room.gameState.currentWord,
         });
@@ -330,7 +330,7 @@ function initializeSocketServer(server) {
         });
 
         if (updatedRoom) {
-          io.to(roomCode).emit("phase-changed", {
+          io.in(roomCode).emit("phase-changed", {
             phase: "results",
             gameState: updatedRoom.gameState,
           });
@@ -367,7 +367,7 @@ function initializeSocketServer(server) {
 
         if (roomDeleted) {
           console.log(`Room ${roomCode} deleted (host left or empty)`);
-          io.to(roomCode).emit("room-closed", {
+          io.in(roomCode).emit("room-closed", {
             message: "Host left the room",
           });
         } else {
@@ -398,7 +398,7 @@ function initializeSocketServer(server) {
 
         if (roomDeleted) {
           console.log(`Room ${roomCode} deleted (host left or empty)`);
-          io.to(roomCode).emit("room-closed", {
+          io.in(roomCode).emit("room-closed", {
             message: "Host left the room",
           });
         } else {

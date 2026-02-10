@@ -153,8 +153,8 @@ export function initializeSocketServer(server: HTTPServer) {
 
         console.log(`Game started in room ${roomCode}`);
 
-        // Notify all players
-        io.to(roomCode).emit("game-started", {
+        // Notify all players including the host
+        io.in(roomCode).emit("game-started", {
           gameState: updatedRoom.gameState,
         });
 
@@ -183,8 +183,8 @@ export function initializeSocketServer(server: HTTPServer) {
           return;
         }
 
-        // Notify all players about the reveal
-        socket.to(roomCode).emit("player-revealed-update", {
+        // Notify all players about the reveal, including the player who revealed
+        io.in(roomCode).emit("player-revealed-update", {
           playerId,
           players: Array.from(room.players.values()),
         });
@@ -227,8 +227,8 @@ export function initializeSocketServer(server: HTTPServer) {
 
         console.log(`Phase changed to ${phase} in room ${roomCode}`);
 
-        // Notify all players
-        io.to(roomCode).emit("phase-changed", {
+        // Notify all players including the host
+        io.in(roomCode).emit("phase-changed", {
           phase,
           gameState: updatedRoom.gameState,
         });
@@ -268,8 +268,8 @@ export function initializeSocketServer(server: HTTPServer) {
 
         console.log(`Impostor revealed in room ${roomCode}`);
 
-        // Notify all players
-        io.to(roomCode).emit("impostor-revealed", {
+        // Notify all players including the host
+        io.in(roomCode).emit("impostor-revealed", {
           impostors,
           word: room.gameState.currentWord,
         });
@@ -280,7 +280,7 @@ export function initializeSocketServer(server: HTTPServer) {
         });
 
         if (updatedRoom) {
-          io.to(roomCode).emit("phase-changed", {
+          io.in(roomCode).emit("phase-changed", {
             phase: "results",
             gameState: updatedRoom.gameState,
           });
@@ -316,7 +316,7 @@ export function initializeSocketServer(server: HTTPServer) {
 
         if (roomDeleted) {
           console.log(`Room ${roomCode} deleted (host left or empty)`);
-          io.to(roomCode).emit("room-closed", {
+          io.in(roomCode).emit("room-closed", {
             message: "Host left the room",
           });
         } else {
