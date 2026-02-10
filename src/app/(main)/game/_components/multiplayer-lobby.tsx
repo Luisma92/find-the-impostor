@@ -7,7 +7,7 @@ import { Label } from "@/src/components/ui/label";
 import { useSocket } from "@/src/hooks/use-socket";
 import { socketService } from "@/src/lib/socket-service";
 import { useGameStore } from "@/src/stores/game-store";
-import type { Player } from "@/src/types/game";
+import type { Player, GameState } from "@/src/types/game";
 import { Users, Wifi, WifiOff, Copy, Check } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
@@ -40,6 +40,10 @@ export function MultiplayerLobby({
   const gameState = useGameStore(state => state.gameState);
   const setRoomData = useGameStore(state => state.setRoomData);
   const updatePlayers = useGameStore(state => state.updatePlayers);
+  const updateGameStateFromServer = useGameStore(
+    state => state.updateGameStateFromServer,
+  );
+  const clearRoomData = useGameStore(state => state.clearRoomData);
   const currentPlayerId = useGameStore(state => state.currentPlayerId);
   const isGeneratingWord = useGameStore(state => state.isGeneratingWord);
 
@@ -71,13 +75,37 @@ export function MultiplayerLobby({
 
     const handleRoomClosed = (data: { message: string }) => {
       toast.error(data.message);
-      setRoomData("", "", "", false);
+      clearRoomData();
       setMode("select");
+    };
+
+    const handleHostChanged = (data: {
+      newHostId: string;
+      newHostName: string;
+      gameState: GameState;
+    }) => {
+      toast.info(t("newHostIs", { name: data.newHostName }));
+      updateGameStateFromServer(data.gameState);
+      setPlayers(data.gameState.players);
+      updatePlayers(data.gameState.players);
+    };
+
+    const handlePlayerRejoined = (data: {
+      oldPlayerId: string;
+      newPlayerId: string;
+      playerName: string;
+      players: Player[];
+    }) => {
+      setPlayers(data.players);
+      updatePlayers(data.players);
+      toast.success(t("playerRejoined", { name: data.playerName }));
     };
 
     socketService.onPlayerJoined(handlePlayerJoined);
     socketService.onPlayerLeft(handlePlayerLeft);
     socketService.onRoomClosed(handleRoomClosed);
+    socketService.getSocket().on("host-changed", handleHostChanged);
+    socketService.getSocket().on("player-rejoined", handlePlayerRejoined);
 
     return () => {
       socketService.removeListener(
@@ -92,8 +120,10 @@ export function MultiplayerLobby({
         "room-closed",
         handleRoomClosed as (...args: unknown[]) => void,
       );
+      socketService.getSocket().off("host-changed", handleHostChanged);
+      socketService.getSocket().off("player-rejoined", handlePlayerRejoined);
     };
-  }, [inRoom, updatePlayers, setRoomData, t]);
+  }, [inRoom, updatePlayers, clearRoomData, updateGameStateFromServer, t]);
 
   // Sync players from gameState
   useEffect(() => {
@@ -146,6 +176,17 @@ export function MultiplayerLobby({
 
     onStartGame();
   }, [isHost, players.length, onStartGame, t]);
+
+  const handleLeaveRoom = useCallback(() => {
+    socketService.leaveRoom(response => {
+      if (response.success) {
+        clearRoomData();
+        onBack();
+      } else {
+        toast.error(t("failedToLeaveRoom"));
+      }
+    });
+  }, [clearRoomData, onBack, t]);
 
   const copyRoomCode = useCallback(() => {
     const code = gameState.roomCode || roomCode;
@@ -242,7 +283,11 @@ export function MultiplayerLobby({
           </div>
 
           <div className="flex gap-3">
-            <Button variant="outline" onClick={onBack} className="flex-1">
+            <Button
+              variant="outline"
+              onClick={handleLeaveRoom}
+              className="flex-1"
+            >
               {t("leaveRoom")}
             </Button>
             {isHost && (

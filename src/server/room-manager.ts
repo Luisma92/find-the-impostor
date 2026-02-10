@@ -6,6 +6,7 @@ export interface RoomData {
   players: Map<string, Player>;
   gameState: GameState;
   createdAt: Date;
+  lastActivityAt?: Date;
 }
 
 class RoomManager {
@@ -56,6 +57,7 @@ class RoomManager {
         isMultiplayer: true,
       },
       createdAt: new Date(),
+      lastActivityAt: new Date(),
     };
 
     this.rooms.set(code, room);
@@ -72,10 +74,32 @@ class RoomManager {
     playerName: string,
   ): RoomData | null {
     const room = this.rooms.get(code);
-    if (!room) return null;
+    if (!room) {
+      console.log("joinRoom failed: Room not found", { code });
+      return null;
+    }
 
     // Check if game already started
-    if (room.gameState.gameStarted) return null;
+    if (room.gameState.gameStarted) {
+      console.log("joinRoom failed: Game already started", {
+        code,
+        gameStarted: room.gameState.gameStarted,
+      });
+      return null;
+    }
+
+    // Check if player already exists in room (shouldn't happen, but handle it)
+    const existingPlayer = room.players.get(playerId);
+    if (existingPlayer) {
+      console.log("joinRoom: Player already in room, updating connection", {
+        playerId,
+        existingName: existingPlayer.name,
+        newName: playerName,
+      });
+      existingPlayer.isConnected = true;
+      existingPlayer.name = playerName; // Update name in case it changed
+      return room;
+    }
 
     const player: Player = {
       id: playerId,
@@ -86,6 +110,13 @@ class RoomManager {
     };
 
     room.players.set(playerId, player);
+    room.lastActivityAt = new Date();
+    console.log("joinRoom success:", {
+      code,
+      playerId,
+      playerName,
+      totalPlayers: room.players.size,
+    });
     return room;
   }
 
@@ -94,11 +125,32 @@ class RoomManager {
     if (!room) return false;
 
     room.players.delete(playerId);
+    room.lastActivityAt = new Date();
 
-    // If room is empty or host left, delete room
-    if (room.players.size === 0 || playerId === room.hostId) {
+    // If room is empty, delete room
+    if (room.players.size === 0) {
       this.rooms.delete(code);
+      console.log("Room deleted (empty):", { code });
       return true;
+    }
+
+    // If host left but there are still players, transfer host
+    if (playerId === room.hostId) {
+      const newHost = Array.from(room.players.values())[0];
+      if (newHost) {
+        room.hostId = newHost.id;
+        room.gameState.hostId = newHost.id;
+        console.log(
+          `Host transferred from ${playerId} to ${newHost.id} (${newHost.name})`,
+        );
+        // Return false to indicate room was not deleted, but host changed
+        return false;
+      } else {
+        // No players left, delete room
+        this.rooms.delete(code);
+        console.log("Room deleted (no players after host left):", { code });
+        return true;
+      }
     }
 
     return false;
@@ -151,16 +203,52 @@ class RoomManager {
     return this.rooms.size;
   }
 
-  // Cleanup old rooms (call this periodically)
+  // Cleanup old rooms and disconnected players
   cleanupOldRooms(maxAgeMinutes: number = 60): number {
     const now = new Date();
     let cleaned = 0;
 
     for (const [code, room] of this.rooms.entries()) {
       const ageMinutes = (now.getTime() - room.createdAt.getTime()) / 1000 / 60;
-      if (ageMinutes > maxAgeMinutes) {
+      const inactiveMinutes = room.lastActivityAt
+        ? (now.getTime() - room.lastActivityAt.getTime()) / 1000 / 60
+        : ageMinutes;
+
+      // Delete rooms older than maxAgeMinutes or inactive for 10+ minutes
+      if (ageMinutes > maxAgeMinutes || inactiveMinutes > 10) {
         this.rooms.delete(code);
         cleaned++;
+        console.log("Cleaned up room:", {
+          code,
+          ageMinutes: ageMinutes.toFixed(1),
+          inactiveMinutes: inactiveMinutes.toFixed(1),
+        });
+        continue;
+      }
+
+      // Remove players disconnected for more than 5 minutes
+      let playersRemoved = false;
+      for (const [playerId, player] of room.players.entries()) {
+        if (!player.isConnected) {
+          // If player has been disconnected for too long, remove them
+          // (Note: We don't track disconnect time per player, so we use room inactivity)
+          if (inactiveMinutes > 5) {
+            room.players.delete(playerId);
+            playersRemoved = true;
+            console.log("Removed inactive player:", {
+              roomCode: code,
+              playerId,
+              playerName: player.name,
+            });
+          }
+        }
+      }
+
+      // If all players removed, delete room
+      if (playersRemoved && room.players.size === 0) {
+        this.rooms.delete(code);
+        cleaned++;
+        console.log("Room deleted after player cleanup:", { code });
       }
     }
 

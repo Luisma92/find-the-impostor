@@ -63,6 +63,12 @@ export function initializeSocketServer(server: HTTPServer) {
     // Join room
     socket.on("join-room", (data: JoinRoomData, callback) => {
       try {
+        console.log("Player attempting to join room:", {
+          roomCode: data.roomCode,
+          playerId: socket.id,
+          playerName: data.playerName,
+        });
+
         const room = roomManager.joinRoom(
           data.roomCode,
           socket.id,
@@ -70,12 +76,24 @@ export function initializeSocketServer(server: HTTPServer) {
         );
 
         if (!room) {
+          console.log("Join room failed:", {
+            roomCode: data.roomCode,
+            playerId: socket.id,
+            reason: "Room not found or game already started",
+          });
           callback({
             success: false,
             error: "Room not found or game already started",
           });
           return;
         }
+
+        console.log("Player joined successfully:", {
+          roomCode: data.roomCode,
+          playerId: socket.id,
+          gameStarted: room.gameState.gameStarted,
+          playersCount: room.players.size,
+        });
 
         socket.join(data.roomCode);
         (socket as unknown as ExtendedSocket).roomCode = data.roomCode;
@@ -107,6 +125,249 @@ export function initializeSocketServer(server: HTTPServer) {
       }
     });
 
+    // Rejoin room after disconnection
+    socket.on(
+      "rejoin-room",
+      (data: { roomCode: string; oldPlayerId: string }, callback) => {
+        try {
+          const room = roomManager.getRoom(data.roomCode);
+
+          if (!room) {
+            callback({
+              success: false,
+              error: "Room not found",
+            });
+            return;
+          }
+
+          // Check if old player exists in room
+          const oldPlayer = room.players.get(data.oldPlayerId);
+
+          if (oldPlayer) {
+            // Update existing player with new socket ID
+            const updatedPlayer = {
+              ...oldPlayer,
+              id: socket.id,
+              isConnected: true,
+            };
+            room.players.delete(data.oldPlayerId);
+            room.players.set(socket.id, updatedPlayer);
+
+            // Update gameState players array if game started
+            if (room.gameState.gameStarted && room.gameState.players) {
+              room.gameState.players = room.gameState.players.map(p =>
+                p.id === data.oldPlayerId
+                  ? { ...p, id: socket.id, isConnected: true }
+                  : p,
+              );
+            }
+
+            // If was host, transfer host to new socket ID
+            if (room.hostId === data.oldPlayerId) {
+              room.hostId = socket.id;
+              room.gameState.hostId = socket.id;
+            }
+
+            socket.join(data.roomCode);
+            (socket as unknown as ExtendedSocket).roomCode = data.roomCode;
+            (socket as unknown as ExtendedSocket).playerId = socket.id;
+
+            console.log("Player rejoined successfully:", {
+              newPlayerId: socket.id,
+              oldPlayerId: data.oldPlayerId,
+              roomCode: data.roomCode,
+              gameStarted: room.gameState.gameStarted,
+              playersCount: room.players.size,
+            });
+
+            // Notify others about reconnection
+            socket.to(data.roomCode).emit("player-rejoined", {
+              oldPlayerId: data.oldPlayerId,
+              newPlayerId: socket.id,
+              playerName: updatedPlayer.name,
+              players: Array.from(room.players.values()),
+            });
+
+            callback({
+              success: true,
+              newPlayerId: socket.id,
+              room: {
+                code: room.code,
+                hostId: room.hostId,
+                players: Array.from(room.players.values()),
+                gameState: room.gameState,
+              },
+            });
+          } else {
+            // Player not found, can't rejoin
+            callback({
+              success: false,
+              error: "Player not found in room",
+            });
+          }
+        } catch (error) {
+          console.error("Error rejoining room:", error);
+          callback({
+            success: false,
+            error: "Failed to rejoin room",
+          });
+        }
+      },
+    );
+
+    // Leave room
+    socket.on(
+      "leave-room",
+      (
+        data: unknown,
+        callback: (response: { success: boolean; error?: string }) => void,
+      ) => {
+        console.log("leave-room event received", { socketId: socket.id, data });
+
+        // Handle case where callback might be in first parameter
+        const actualCallback = typeof data === "function" ? data : callback;
+
+        if (typeof actualCallback !== "function") {
+          console.error("leave-room: No valid callback provided");
+          return;
+        }
+
+        try {
+          const extSocket = socket as unknown as ExtendedSocket;
+          const roomCode = extSocket.roomCode;
+          const playerId = extSocket.playerId;
+
+          console.log("leave-room details:", {
+            roomCode,
+            playerId,
+            socketId: socket.id,
+          });
+
+          if (!roomCode || !playerId) {
+            console.log("leave-room failed: Not in a room", {
+              roomCode,
+              playerId,
+            });
+            actualCallback({ success: false, error: "Not in a room" });
+            return;
+          }
+
+          const roomDeleted = roomManager.leaveRoom(roomCode, playerId);
+
+          if (roomDeleted) {
+            io.in(roomCode).emit("room-closed", {
+              message: "Host left the room",
+            });
+          } else {
+            const room = roomManager.getRoom(roomCode);
+            if (room) {
+              io.to(roomCode).emit("player-left", {
+                playerId,
+                players: Array.from(room.players.values()),
+              });
+            }
+          }
+
+          socket.leave(roomCode);
+          extSocket.roomCode = undefined;
+          extSocket.playerId = undefined;
+
+          console.log("leave-room success", {
+            playerId,
+            roomCode,
+            roomDeleted,
+          });
+          actualCallback({ success: true });
+        } catch (error) {
+          console.error("Error leaving room:", error);
+          actualCallback({ success: false, error: "Failed to leave room" });
+        }
+      },
+    );
+
+    // Close room (host only - closes room for all players)
+    socket.on(
+      "close-room",
+      (callback: (response: { success: boolean; error?: string }) => void) => {
+        console.log("close-room event received", { socketId: socket.id });
+
+        if (typeof callback !== "function") {
+          console.error("close-room: No valid callback provided");
+          return;
+        }
+
+        try {
+          const extSocket = socket as unknown as ExtendedSocket;
+          const roomCode = extSocket.roomCode;
+          const playerId = extSocket.playerId;
+
+          console.log("close-room details:", {
+            roomCode,
+            playerId,
+            socketId: socket.id,
+          });
+
+          if (!roomCode || !playerId) {
+            console.log("close-room failed: Not in a room", {
+              roomCode,
+              playerId,
+            });
+            callback({ success: false, error: "Not in a room" });
+            return;
+          }
+
+          const room = roomManager.getRoom(roomCode);
+          if (!room) {
+            console.log("close-room failed: Room not found");
+            callback({ success: false, error: "Room not found" });
+            return;
+          }
+
+          // Verify the player is the host
+          if (room.hostId !== playerId) {
+            console.log("close-room failed: Not the host", {
+              hostId: room.hostId,
+              playerId,
+            });
+            callback({ success: false, error: "Only host can close the room" });
+            return;
+          }
+
+          // Emit room-closed to all players in the room (including host)
+          io.in(roomCode).emit("room-closed", {
+            message: "Host closed the room",
+          });
+
+          // Get all sockets in the room and make them leave
+          const socketsInRoom = io.sockets.adapter.rooms.get(roomCode);
+          if (socketsInRoom) {
+            socketsInRoom.forEach(socketId => {
+              const clientSocket = io.sockets.sockets.get(socketId);
+              if (clientSocket) {
+                clientSocket.leave(roomCode);
+                const extClientSocket =
+                  clientSocket as unknown as ExtendedSocket;
+                extClientSocket.roomCode = undefined;
+                extClientSocket.playerId = undefined;
+              }
+            });
+          }
+
+          // Delete the room
+          roomManager.deleteRoom(roomCode);
+
+          console.log("close-room success", {
+            roomCode,
+            hostId: playerId,
+          });
+          callback({ success: true });
+        } catch (error) {
+          console.error("Error closing room:", error);
+          callback({ success: false, error: "Failed to close room" });
+        }
+      },
+    );
+
     // Start game (host only)
     socket.on("start-game", (gameState: GameState, callback) => {
       try {
@@ -129,17 +390,73 @@ export function initializeSocketServer(server: HTTPServer) {
           return;
         }
 
-        // Update game state
+        console.log("Starting game:", {
+          roomCode,
+          hostId: room.hostId,
+          playersCount: room.players.size,
+          impostorCount: gameState.impostorCount || 1,
+        });
+
+        // Get current players from room (with updated IDs after reconnections)
+        const currentPlayers = Array.from(room.players.values());
+
+        // Assign roles: randomly select impostors
+        const impostorCount = Math.min(
+          gameState.impostorCount || 1,
+          currentPlayers.length - 1,
+        );
+
+        const shuffledIndexes = Array.from(
+          { length: currentPlayers.length },
+          (_, i) => i,
+        ).sort(() => Math.random() - 0.5);
+
+        // Assign impostor role to random players
+        for (let i = 0; i < impostorCount; i++) {
+          currentPlayers[shuffledIndexes[i]].role = "impostor";
+        }
+
+        // Reset revealed status for all players
+        currentPlayers.forEach(p => {
+          p.hasRevealed = false;
+        });
+
+        console.log("Players with assigned roles:", {
+          players: currentPlayers.map(p => ({
+            id: p.id,
+            name: p.name,
+            role: p.role,
+          })),
+        });
+
+        // Update both room.players Map and gameState.players array
+        currentPlayers.forEach(p => {
+          const mapPlayer = room.players.get(p.id);
+          if (mapPlayer) {
+            mapPlayer.role = p.role;
+            mapPlayer.hasRevealed = false;
+          }
+        });
+
+        // Update game state with players having correct IDs
         const updatedRoom = roomManager.updateGameState(roomCode, {
           ...gameState,
           gameStarted: true,
           phase: "wordreveal",
+          players: currentPlayers,
+          currentRevealIndex: 0,
         });
 
         if (!updatedRoom) {
           callback({ success: false, error: "Failed to update game state" });
           return;
         }
+
+        console.log("Game started successfully:", {
+          roomCode,
+          phase: updatedRoom.gameState.phase,
+          playersCount: updatedRoom.gameState.players?.length,
+        });
 
         // Notify all players including the host
         io.in(roomCode).emit("game-started", {
@@ -333,6 +650,15 @@ export function initializeSocketServer(server: HTTPServer) {
           players[shuffledIndexes[i]].role = "impostor";
         }
 
+        // Update room.players Map with reset states
+        players.forEach(p => {
+          const mapPlayer = room.players.get(p.id);
+          if (mapPlayer) {
+            mapPlayer.role = p.role;
+            mapPlayer.hasRevealed = false;
+          }
+        });
+
         // Update game state
         const updatedRoom = roomManager.updateGameState(roomCode, {
           gameStarted: true,
@@ -381,18 +707,27 @@ export function initializeSocketServer(server: HTTPServer) {
       const roomCode = extSocket.roomCode;
       const playerId = extSocket.playerId;
 
-      if (roomCode && playerId) {
-        const roomDeleted = roomManager.leaveRoom(roomCode, playerId);
+      console.log("Player disconnected:", { roomCode, playerId });
 
-        if (roomDeleted) {
-          io.in(roomCode).emit("room-closed", {
-            message: "Host left the room",
-          });
-        } else {
-          const room = roomManager.getRoom(roomCode);
-          if (room) {
-            io.to(roomCode).emit("player-left", {
+      if (roomCode && playerId) {
+        const room = roomManager.getRoom(roomCode);
+
+        if (room) {
+          // Mark player as disconnected instead of removing them
+          const player = room.players.get(playerId);
+          if (player) {
+            player.isConnected = false;
+            console.log("Player marked as disconnected:", {
               playerId,
+              playerName: player.name,
+              roomCode,
+              remainingPlayers: room.players.size,
+            });
+
+            // Notify others that player disconnected (but stay in room for rejoin)
+            io.to(roomCode).emit("player-disconnected", {
+              playerId,
+              playerName: player.name,
               players: Array.from(room.players.values()),
             });
           }
