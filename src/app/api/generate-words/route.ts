@@ -5,6 +5,8 @@ import { openAIService } from "@/src/lib/openai-service";
 import { PromptEngine } from "@/src/lib/prompts";
 import { NextRequest, NextResponse } from "next/server";
 
+type Difficulty = "easy" | "medium" | "hard";
+
 interface RateLimitTier {
   windowMs: number;
   maxRequests: number;
