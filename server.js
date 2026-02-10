@@ -23,8 +23,8 @@ app.prepare().then(() => {
   });
 
   // Import and initialize Socket.IO
-   
-  const { initializeSocketServer } = require("./src/server/socket-handler.js");
+
+  const { initializeSocketServer } = require("./src/server/socket-handler.ts");
   initializeSocketServer(server);
 
   server.listen(port, () => {
