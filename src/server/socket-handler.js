@@ -433,7 +433,7 @@ function initializeSocketServer(server) {
           impostorCount: gameConfig.impostorCount,
           aiHints: gameConfig.aiHints,
           players: resetPlayers,
-          phase: "wordReveal",
+          phase: "wordreveal",
           gameStarted: true,
         });
 
