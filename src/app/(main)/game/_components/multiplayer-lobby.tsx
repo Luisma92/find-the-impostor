@@ -70,7 +70,7 @@ export function MultiplayerLobby({
 
     const handleRoomClosed = (data: { message: string }) => {
       toast.error(data.message);
-      setRoomData("", "", "");
+      setRoomData("", "", "", false);
       setMode("select");
     };
 
@@ -79,9 +79,18 @@ export function MultiplayerLobby({
     socketService.onRoomClosed(handleRoomClosed);
 
     return () => {
-      socketService.removeListener("player-joined", handlePlayerJoined);
-      socketService.removeListener("player-left", handlePlayerLeft);
-      socketService.removeListener("room-closed", handleRoomClosed);
+      socketService.removeListener(
+        "player-joined",
+        handlePlayerJoined as (...args: unknown[]) => void,
+      );
+      socketService.removeListener(
+        "player-left",
+        handlePlayerLeft as (...args: unknown[]) => void,
+      );
+      socketService.removeListener(
+        "room-closed",
+        handleRoomClosed as (...args: unknown[]) => void,
+      );
     };
   }, [inRoom, updatePlayers, setRoomData, t]);
 

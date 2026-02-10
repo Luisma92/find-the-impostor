@@ -73,12 +73,15 @@
     "results": "Ergebnisse",
     "theWordWas": "Das Wort war",
     "newGame": "Neues Spiel",
+    "playAgain": "Nochmal spielen",
     "category": "Kategorie",
     "impostor": "Hochstapler",
     "impostors": "Hochstapler",
     "backToMenu": "Zurück zum Menü",
     "returnToMenu": "Zurückkehr zum Spielmenü",
-    "waitingForHost": "Warte auf Host..."
+    "waitingForHost": "Warte auf Host...",
+    "restartingGame": "Spiel wird neu gestartet...",
+    "gameRestarted": "Spiel neu gestartet!"
   },
   "Error": {
     "somethingWentWrong": "Etwas ist schief gelaufen, bitte versuche es erneut."
@@ -92,6 +95,7 @@
     "joinWithCode": "Mit Code beitreten",
     "joinWithCodeDescription": "Gib einen Raumcode ein, um beizutreten",
     "gameStarted": "Spiel gestartet!",
+    "phaseChanged": "Phase geändert",
     "impostorRevealed": "Der Hochstapler wurde aufgedeckt!",
     "roomCreated": "Raum erstellt: {code}",
     "failedToCreateRoom": "Raum konnte nicht erstellt werden",
@@ -153,6 +157,7 @@
     "onlyHostCanStartDiscussion": "Nur der Host kann die Diskussion starten",
     "discussionStarted": "Diskussion gestartet!",
     "failedToStartDiscussion": "Diskussion konnte nicht gestartet werden",
+    "starting": "Wird gestartet...",
     "playerNotFound": "Spieler nicht gefunden...",
     "allCardsRevealed": "Alle Karten aufgedeckt!",
     "youCanStartDiscussion": "Sie können die Diskussion jetzt starten",

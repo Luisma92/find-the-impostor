@@ -73,12 +73,15 @@
     "results": "Results",
     "theWordWas": "The Word Was",
     "newGame": "New Game",
+    "playAgain": "Play Again",
     "category": "Category",
     "impostor": "Impostor",
     "impostors": "Impostors",
     "backToMenu": "Back to Menu",
     "returnToMenu": "Returning to game menu",
-    "waitingForHost": "Waiting for host..."
+    "waitingForHost": "Waiting for host...",
+    "restartingGame": "Restarting game...",
+    "gameRestarted": "Game restarted!"
   },
   "Error": {
     "somethingWentWrong": "Something went wrong, please try again."
@@ -92,6 +95,7 @@
     "joinWithCode": "Join with Code",
     "joinWithCodeDescription": "Enter a room code to join",
     "gameStarted": "Game started!",
+    "phaseChanged": "Phase changed",
     "impostorRevealed": "The impostor has been revealed!",
     "roomCreated": "Room created: {code}",
     "failedToCreateRoom": "Failed to create room",
@@ -153,6 +157,7 @@
     "onlyHostCanStartDiscussion": "Only the host can start the discussion",
     "discussionStarted": "Discussion started!",
     "failedToStartDiscussion": "Failed to start discussion",
+    "starting": "Starting...",
     "playerNotFound": "Player not found...",
     "allCardsRevealed": "All Cards Revealed!",
     "youCanStartDiscussion": "You can start the discussion now",

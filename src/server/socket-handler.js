@@ -240,6 +240,12 @@ function initializeSocketServer(server) {
       try {
         const roomCode = socket.roomCode;
 
+        console.log(
+          `🔄 change-phase called by ${socket.id} for phase: ${phase}`,
+        );
+        console.log(`   Socket roomCode: ${roomCode}`);
+        console.log(`   Socket rooms:`, Array.from(socket.rooms));
+
         if (!roomCode) {
           callback({ success: false, error: "Not in a room" });
           return;
@@ -276,7 +282,21 @@ function initializeSocketServer(server) {
           return;
         }
 
-        console.log(`Phase changed to ${phase} in room ${roomCode}`);
+        console.log(`✅ Phase changed to ${phase} in room ${roomCode}`);
+        console.log(`📤 Emitting phase-changed to room:`, {
+          phase,
+          gameState: {
+            phase: updatedRoom.gameState.phase,
+            players: updatedRoom.gameState.players.length,
+          },
+        });
+
+        // Check how many sockets are in the room
+        const socketsInRoom = io.sockets.adapter.rooms.get(roomCode);
+        console.log(
+          `   👥 Sockets in room ${roomCode}:`,
+          socketsInRoom ? socketsInRoom.size : 0,
+        );
 
         // Notify all players including the host
         io.in(roomCode).emit("phase-changed", {
@@ -284,6 +304,7 @@ function initializeSocketServer(server) {
           gameState: updatedRoom.gameState,
         });
 
+        console.log(`✔️ Event emitted successfully, sending callback`);
         callback({ success: true });
       } catch (error) {
         console.error("Error changing phase:", error);
@@ -340,6 +361,100 @@ function initializeSocketServer(server) {
       } catch (error) {
         console.error("Error revealing impostor:", error);
         callback({ success: false, error: "Failed to reveal impostor" });
+      }
+    });
+
+    // Restart game (host only)
+    socket.on("restart-game", (gameConfig, callback) => {
+      try {
+        const roomCode = socket.roomCode;
+
+        if (!roomCode) {
+          callback({ success: false, error: "Not in a room" });
+          return;
+        }
+
+        const room = roomManager.getRoom(roomCode);
+        if (!room) {
+          callback({ success: false, error: "Room not found" });
+          return;
+        }
+
+        if (room.hostId !== socket.id) {
+          callback({ success: false, error: "Only host can restart the game" });
+          return;
+        }
+
+        // Validate gameConfig
+        if (!gameConfig || typeof gameConfig !== "object") {
+          callback({ success: false, error: "Invalid game configuration" });
+          return;
+        }
+
+        // Get current players from the room
+        const players = Array.from(room.players.values());
+
+        // Reset all player states for the new game
+        const resetPlayers = players.map(player => ({
+          ...player,
+          role: "player",
+          hasRevealed: false,
+        }));
+
+        // Randomly assign impostor roles
+        const playerCount = resetPlayers.length;
+        const impostorCount = gameConfig.impostorCount || 1; // Default to 1 if not provided
+
+        // Create array of shuffled indexes
+        const shuffledIndexes = Array.from(
+          { length: playerCount },
+          (_, i) => i,
+        );
+        for (let i = shuffledIndexes.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffledIndexes[i], shuffledIndexes[j]] = [
+            shuffledIndexes[j],
+            shuffledIndexes[i],
+          ];
+        }
+
+        // Assign impostor role to the first impostorCount players in shuffled array
+        for (let i = 0; i < impostorCount; i++) {
+          const playerIndex = shuffledIndexes[i];
+          resetPlayers[playerIndex].role = "impostor";
+        }
+
+        // Update room with new game state
+        const updatedRoom = roomManager.updateGameState(roomCode, {
+          currentWord: gameConfig.currentWord,
+          category: gameConfig.category,
+          useAI: gameConfig.useAI,
+          complexity: gameConfig.complexity,
+          impostorCount: gameConfig.impostorCount,
+          aiHints: gameConfig.aiHints,
+          players: resetPlayers,
+          phase: "wordReveal",
+          gameStarted: true,
+        });
+
+        if (!updatedRoom) {
+          callback({ success: false, error: "Failed to restart game" });
+          return;
+        }
+
+        console.log(
+          `Game restarted in room ${roomCode} with ${playerCount} players and ${impostorCount} impostors`,
+        );
+
+        // Notify all players including the host that the game has been restarted
+        io.in(roomCode).emit("game-started", {
+          gameState: updatedRoom.gameState,
+        });
+
+        callback({ success: true });
+      } catch (error) {
+        console.error("Error restarting game:", error);
+        callback({ success: false, error: "Failed to restart game" });
       }
     });
 

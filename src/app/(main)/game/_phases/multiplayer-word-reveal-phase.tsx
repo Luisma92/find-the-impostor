@@ -26,6 +26,7 @@ export default function MultiplayerWordRevealPhase() {
   const [isCardFlipped, setIsCardFlipped] = useState(false);
   const [randomHint, setRandomHint] = useState<string>("");
   const [allRevealed, setAllRevealed] = useState(false);
+  const [isStartingDiscussion, setIsStartingDiscussion] = useState(false);
 
   const currentPlayer = gameState.players.find(p => p.id === currentPlayerId);
   const isHost = currentPlayerId === gameState.hostId;
@@ -37,14 +38,12 @@ export default function MultiplayerWordRevealPhase() {
       playerId: string;
       players: unknown;
     }) => {
-      console.log("player-revealed-update received:", data);
       // Update players in store
       const players = data.players as Array<{ hasRevealed?: boolean }>;
       updatePlayers(players as Player[]);
 
       // Check if all players have revealed
       const allPlayersRevealed = players.every(p => p.hasRevealed);
-      console.log("All players revealed:", allPlayersRevealed);
       setAllRevealed(allPlayersRevealed);
     };
 
@@ -92,14 +91,20 @@ export default function MultiplayerWordRevealPhase() {
       return;
     }
 
+    if (isStartingDiscussion) {
+      return;
+    }
+
+    setIsStartingDiscussion(true);
     socketService.changePhase("discussion", response => {
       if (response.success) {
         toast.success(tReveal("discussionStarted"));
       } else {
         toast.error(response.error || tReveal("failedToStartDiscussion"));
+        setIsStartingDiscussion(false); // Re-enable on error
       }
     });
-  }, [isHost, tReveal]);
+  }, [isHost, tReveal, isStartingDiscussion]);
 
   if (!currentPlayer) {
     return (
@@ -160,10 +165,13 @@ export default function MultiplayerWordRevealPhase() {
               <div className="mb-6">
                 <Button
                   onClick={handleStartDiscussion}
-                  className="w-full rounded-xl bg-green-600 py-6 text-lg font-medium text-white transition-all duration-200 hover:bg-green-700"
+                  disabled={isStartingDiscussion}
+                  className="w-full rounded-xl bg-green-600 py-6 text-lg font-medium text-white transition-all duration-200 hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <MessageCircle className="mr-2 h-5 w-5" />
-                  {t("startDiscussion")}
+                  {isStartingDiscussion
+                    ? tReveal("starting")
+                    : t("startDiscussion")}
                 </Button>
               </div>
             )}

@@ -65,6 +65,16 @@ export default function Game() {
     }
   }, [gameState.gameStarted, gameState.isMultiplayer, gameMode]);
 
+  // When game starts, exit lobby state
+  useEffect(() => {
+    if (gameState.gameStarted && gameState.isMultiplayer) {
+      // Don't stay in lobby/waiting state after game starts
+      if (multiplayerStep === "lobby" || multiplayerStep === "waiting") {
+        setMultiplayerStep("setup"); // Use setup as a neutral state when game is running
+      }
+    }
+  }, [gameState.gameStarted, gameState.isMultiplayer, multiplayerStep]);
+
   // Listen to Socket.IO events for multiplayer
   useGameStarted(
     useCallback(
@@ -83,8 +93,9 @@ export default function Game() {
         gameState: Partial<import("@/src/types/game").GameState>;
       }) => {
         updateGameStateFromServer(data.gameState);
+        toast.info(t("phaseChanged"));
       },
-      [updateGameStateFromServer],
+      [updateGameStateFromServer, t],
     ),
   );
 
@@ -167,6 +178,7 @@ export default function Game() {
               response.roomCode,
               response.playerId,
               response.room!.hostId,
+              true,
             );
             updatePlayers(response.room!.players);
             toast.success(t("roomCreated", { code: response.roomCode }));

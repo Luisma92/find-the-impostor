@@ -73,12 +73,15 @@
     "results": "Resultados",
     "theWordWas": "La Palabra Era",
     "newGame": "Nuevo Juego",
+    "playAgain": "Jugar de Nuevo",
     "category": "Categoría",
     "impostor": "Impostor",
     "impostors": "Impostores",
     "backToMenu": "Volver al Menú",
     "returnToMenu": "Volviendo al menú del juego",
-    "waitingForHost": "Esperando al anfitrión..."
+    "waitingForHost": "Esperando al anfitrión...",
+    "restartingGame": "Reiniciando partida...",
+    "gameRestarted": "¡Partida reiniciada!"
   },
   "Error": {
     "somethingWentWrong": "Algo salió mal, por favor intenta de nuevo."
@@ -92,6 +95,7 @@
     "joinWithCode": "Unirse con Código",
     "joinWithCodeDescription": "Ingresa un código de sala para unirte",
     "gameStarted": "¡Juego iniciado!",
+    "phaseChanged": "Fase cambiada",
     "impostorRevealed": "¡El impostor ha sido revelado!",
     "roomCreated": "Sala creada: {code}",
     "failedToCreateRoom": "Error al crear la sala",
@@ -153,6 +157,7 @@
     "onlyHostCanStartDiscussion": "Solo el anfitrión puede iniciar la discusión",
     "discussionStarted": "¡Discusión iniciada!",
     "failedToStartDiscussion": "Error al iniciar la discusión",
+    "starting": "Iniciando...",
     "playerNotFound": "Jugador no encontrado...",
     "allCardsRevealed": "¡Todas las Cartas Reveladas!",
     "youCanStartDiscussion": "Puedes iniciar la discusión ahora",

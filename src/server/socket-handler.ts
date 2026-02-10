@@ -32,8 +32,6 @@ export function initializeSocketServer(server: HTTPServer) {
   (server as SocketServer).io = io;
 
   io.on("connection", socket => {
-    console.log("Client connected:", socket.id);
-
     // Create room
     socket.on("create-room", (data: CreateRoomData, callback) => {
       try {
@@ -41,10 +39,6 @@ export function initializeSocketServer(server: HTTPServer) {
         socket.join(room.code);
         (socket as unknown as ExtendedSocket).roomCode = room.code;
         (socket as unknown as ExtendedSocket).playerId = socket.id;
-
-        console.log(
-          `Room created: ${room.code} by ${data.hostName} (${socket.id})`,
-        );
 
         callback({
           success: true,
@@ -86,10 +80,6 @@ export function initializeSocketServer(server: HTTPServer) {
         socket.join(data.roomCode);
         (socket as unknown as ExtendedSocket).roomCode = data.roomCode;
         (socket as unknown as ExtendedSocket).playerId = socket.id;
-
-        console.log(
-          `${data.playerName} (${socket.id}) joined room ${data.roomCode}`,
-        );
 
         // Notify others in the room
         socket.to(data.roomCode).emit("player-joined", {
@@ -150,8 +140,6 @@ export function initializeSocketServer(server: HTTPServer) {
           callback({ success: false, error: "Failed to update game state" });
           return;
         }
-
-        console.log(`Game started in room ${roomCode}`);
 
         // Notify all players including the host
         io.in(roomCode).emit("game-started", {
@@ -218,14 +206,22 @@ export function initializeSocketServer(server: HTTPServer) {
           return;
         }
 
-        const updatedRoom = roomManager.updateGameState(roomCode, { phase });
+        // Prepare the update
+        const update: Partial<GameState> = { phase };
+
+        // If changing to discussion phase, select a random starting player
+        if (phase === "discussion") {
+          const players = Array.from(room.players.values());
+          const startPlayerIndex = Math.floor(Math.random() * players.length);
+          update.startingPlayerId = players[startPlayerIndex].id;
+        }
+
+        const updatedRoom = roomManager.updateGameState(roomCode, update);
 
         if (!updatedRoom) {
           callback({ success: false, error: "Failed to update phase" });
           return;
         }
-
-        console.log(`Phase changed to ${phase} in room ${roomCode}`);
 
         // Notify all players including the host
         io.in(roomCode).emit("phase-changed", {
@@ -266,8 +262,6 @@ export function initializeSocketServer(server: HTTPServer) {
           p => p.role === "impostor",
         );
 
-        console.log(`Impostor revealed in room ${roomCode}`);
-
         // Notify all players including the host
         io.in(roomCode).emit("impostor-revealed", {
           impostors,
@@ -293,6 +287,84 @@ export function initializeSocketServer(server: HTTPServer) {
       }
     });
 
+    // Restart game (host only)
+    socket.on("restart-game", (config, callback) => {
+      try {
+        const extSocket = socket as unknown as ExtendedSocket;
+        const roomCode = extSocket.roomCode;
+
+        if (!roomCode) {
+          callback({ success: false, error: "Not in a room" });
+          return;
+        }
+
+        const room = roomManager.getRoom(roomCode);
+        if (!room) {
+          callback({ success: false, error: "Room not found" });
+          return;
+        }
+
+        if (room.hostId !== socket.id) {
+          callback({ success: false, error: "Only host can restart game" });
+          return;
+        }
+
+        // Validate config
+        if (!config || typeof config !== "object") {
+          callback({ success: false, error: "Invalid game configuration" });
+          return;
+        }
+
+        // Keep same players but reset their states and reassign roles
+        const players = Array.from(room.players.values()).map(p => ({
+          ...p,
+          role: "player" as "player" | "impostor",
+          hasRevealed: false,
+        }));
+
+        // Randomly assign impostor roles
+        const impostorCount = config.impostorCount || 1; // Default to 1 if not provided
+        const shuffledIndexes = Array.from(
+          { length: players.length },
+          (_, i) => i,
+        ).sort(() => Math.random() - 0.5);
+
+        for (let i = 0; i < impostorCount; i++) {
+          players[shuffledIndexes[i]].role = "impostor";
+        }
+
+        // Update game state
+        const updatedRoom = roomManager.updateGameState(roomCode, {
+          gameStarted: true,
+          phase: "wordreveal",
+          players,
+          currentWord: config.currentWord,
+          currentHints: config.currentHints,
+          currentCategory: config.currentCategory,
+          selectedCategories: config.selectedCategories,
+          difficulty: config.difficulty,
+          showHintsToImpostors: config.showHintsToImpostors,
+          impostorCount: impostorCount, // Use validated value
+          currentRevealIndex: 0,
+        });
+
+        if (!updatedRoom) {
+          callback({ success: false, error: "Failed to restart game" });
+          return;
+        }
+
+        // Notify all players
+        io.in(roomCode).emit("game-started", {
+          gameState: updatedRoom.gameState,
+        });
+
+        callback({ success: true });
+      } catch (error) {
+        console.error("Error restarting game:", error);
+        callback({ success: false, error: "Failed to restart game" });
+      }
+    });
+
     // Send notification
     socket.on("send-notification", (notification: NotificationData) => {
       const extSocket = socket as unknown as ExtendedSocket;
@@ -309,13 +381,10 @@ export function initializeSocketServer(server: HTTPServer) {
       const roomCode = extSocket.roomCode;
       const playerId = extSocket.playerId;
 
-      console.log("Client disconnected:", socket.id);
-
       if (roomCode && playerId) {
         const roomDeleted = roomManager.leaveRoom(roomCode, playerId);
 
         if (roomDeleted) {
-          console.log(`Room ${roomCode} deleted (host left or empty)`);
           io.in(roomCode).emit("room-closed", {
             message: "Host left the room",
           });
@@ -337,13 +406,12 @@ export function initializeSocketServer(server: HTTPServer) {
     () => {
       const cleaned = roomManager.cleanupOldRooms(60);
       if (cleaned > 0) {
-        console.log(`Cleaned up ${cleaned} old rooms`);
+        // Cleanup done
       }
     },
     30 * 60 * 1000,
   );
 
-  console.log("Socket.IO server initialized");
   return io;
 }
 

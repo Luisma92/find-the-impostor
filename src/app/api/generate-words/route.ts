@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Locale } from "@/src/config/language";
+import { FALLBACK_WORDS_WITH_HINTS } from "@/src/data/fallbackwords";
 import { openAIService } from "@/src/lib/openai-service";
 import { PromptEngine } from "@/src/lib/prompts";
 import { NextRequest, NextResponse } from "next/server";
@@ -88,8 +89,87 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now();
   const clientIP = getClientIP(request);
 
+  // Declare variables outside try-catch so they're accessible in catch block
+  let category = "";
+  let language: Locale = "en";
+  let count = 1;
+  let difficulty: Difficulty = "medium";
+
   try {
-    // Multi-tier rate limiting
+    // Validate and sanitize input first
+    const body = await request.json();
+    const validation = validateInput(body);
+
+    if (!validation.isValid) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
+
+    // Assign validated values
+    ({ category, language, count, difficulty } = validation.data!);
+
+    // If OpenAI is not configured, use fallback words
+    if (!openAIService) {
+      console.log(
+        `⚠️  OpenAI not configured, using fallback words for category "${category}" in ${language}`,
+      );
+
+      const categoryKey = category.toLowerCase();
+      const fallbacksForLanguage =
+        FALLBACK_WORDS_WITH_HINTS[
+          language as keyof typeof FALLBACK_WORDS_WITH_HINTS
+        ];
+
+      if (!fallbacksForLanguage) {
+        return NextResponse.json(
+          {
+            error: `No fallback words available for language "${language}"`,
+          },
+          { status: 404 },
+        );
+      }
+
+      const fallbackWords =
+        fallbacksForLanguage[categoryKey as keyof typeof fallbacksForLanguage];
+
+      if (!fallbackWords || fallbackWords.length === 0) {
+        return NextResponse.json(
+          {
+            error: `No fallback words available for category "${category}" in language "${language}"`,
+          },
+          { status: 404 },
+        );
+      }
+
+      // Shuffle and return requested count
+      const shuffled = [...fallbackWords].sort(() => Math.random() - 0.5);
+      const selectedWords = shuffled.slice(0, count);
+
+      const responseTime = Date.now() - startTime;
+
+      return NextResponse.json(
+        {
+          wordsWithHints: selectedWords,
+          metadata: {
+            category,
+            language,
+            difficulty,
+            generatedAt: new Date().toISOString(),
+            responseTime,
+            requestedCount: count,
+            actualCount: selectedWords.length,
+            source: "fallback",
+          },
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "X-Response-Time": responseTime.toString(),
+          },
+        },
+      );
+    }
+
+    // Multi-tier rate limiting (only when OpenAI is configured)
     //! NOTE: Implement Redis or similar for distributed rate limiting
     for (const [tierName, tier] of Object.entries(RATE_LIMIT_TIERS)) {
       if (
@@ -118,16 +198,6 @@ export async function POST(request: NextRequest) {
         );
       }
     }
-
-    // Validate and sanitize input
-    const body = await request.json();
-    const validation = validateInput(body);
-
-    if (!validation.isValid) {
-      return NextResponse.json({ error: validation.error }, { status: 400 });
-    }
-
-    const { category, language, count, difficulty } = validation.data!;
 
     const prompt = PromptEngine.createPrompt({
       category,
@@ -188,6 +258,7 @@ export async function POST(request: NextRequest) {
           requestedCount: count,
           actualCount: Math.min(validWords.length, count),
           clientIP: clientIP.substring(0, 8) + "...", // Partial IP for logging
+          source: "openai",
         },
       },
       {
@@ -207,13 +278,65 @@ export async function POST(request: NextRequest) {
     const isAPIError = errorMessage.includes("OpenRouter API error");
     const isRateLimitError = errorMessage.includes("rate limit");
 
+    // If API failed, try to use fallback words
+    console.log(
+      `⚠️  API error, attempting to use fallback words for category "${category}" in ${language}`,
+    );
+
+    const categoryKey = category.toLowerCase();
+    const fallbacksForLanguage =
+      FALLBACK_WORDS_WITH_HINTS[
+        language as keyof typeof FALLBACK_WORDS_WITH_HINTS
+      ];
+
+    if (fallbacksForLanguage) {
+      const fallbackWords =
+        fallbacksForLanguage[categoryKey as keyof typeof fallbacksForLanguage];
+
+      if (fallbackWords && fallbackWords.length > 0) {
+        const selectedWords = fallbackWords
+          .sort(() => Math.random() - 0.5)
+          .slice(0, count);
+
+        console.log(
+          `✅ Using ${selectedWords.length} fallback words after API failure`,
+        );
+
+        return NextResponse.json(
+          {
+            wordsWithHints: selectedWords,
+            metadata: {
+              category,
+              language,
+              difficulty,
+              generatedAt: new Date().toISOString(),
+              responseTime,
+              requestedCount: count,
+              actualCount: selectedWords.length,
+              source: "fallback",
+              apiError: errorMessage,
+            },
+          },
+          {
+            headers: {
+              "Cache-Control":
+                "public, s-maxage=1800, stale-while-revalidate=3600",
+              "Content-Type": "application/json",
+              "X-Response-Time": responseTime.toString(),
+            },
+          },
+        );
+      }
+    }
+
+    // If no fallback words available, return error
     return NextResponse.json(
       {
         error:
           isAPIError || isRateLimitError
             ? errorMessage
             : "Failed to generate words. Please try again.",
-        fallback: true,
+        fallback: false,
         metadata: {
           responseTime,
           timestamp: new Date().toISOString(),
@@ -236,12 +359,13 @@ export async function POST(request: NextRequest) {
 
 // Health check endpoint
 export async function GET() {
-  const stats = openAIService.getUsageStats();
+  const stats = openAIService ? openAIService.getUsageStats() : null;
 
   return NextResponse.json({
     status: "healthy",
     service: "word-generation",
     timestamp: new Date().toISOString(),
+    openAIConfigured: openAIService !== null,
     stats,
   });
 }
