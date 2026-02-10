@@ -36,7 +36,7 @@ export default function Home() {
       </div>
 
       <div className="pb-3 text-center text-sm text-gray-400">
-        © {new Date().getFullYear()} Mark Knotzer
+        © {new Date().getFullYear()} Luis Manuel Yerena
       </div>
     </div>
   );
