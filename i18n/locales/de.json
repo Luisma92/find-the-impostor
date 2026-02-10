@@ -135,7 +135,10 @@
     "needMinPlayers": "Mindestens {min} Spieler erforderlich",
     "roomCodeCopied": "Raumcode kopiert!",
     "copyRoomCode": "Raumcode kopieren",
-    "generatingWord": "Wird generiert..."
+    "generatingWord": "Wird generiert...",
+    "newHostIs": "{name} ist jetzt der Gastgeber",
+    "playerRejoined": "{name} hat sich wieder verbunden",
+    "failedToLeaveRoom": "Fehler beim Verlassen des Raums"
   },
   "MultiplayerSetup": {
     "title": "Mehrspieler-Einrichtung",

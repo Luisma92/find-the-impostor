@@ -135,7 +135,10 @@
     "needMinPlayers": "Need at least {min} players to start",
     "roomCodeCopied": "Room code copied!",
     "copyRoomCode": "Copy room code",
-    "generatingWord": "Generating..."
+    "generatingWord": "Generating...",
+    "newHostIs": "{name} is now the host",
+    "playerRejoined": "{name} reconnected to the room",
+    "failedToLeaveRoom": "Failed to leave room"
   },
   "MultiplayerSetup": {
     "title": "Multiplayer Setup",

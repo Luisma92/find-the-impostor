@@ -135,7 +135,10 @@
     "needMinPlayers": "Se necesitan al menos {min} jugadores para iniciar",
     "roomCodeCopied": "¡Código de sala copiado!",
     "copyRoomCode": "Copiar código de sala",
-    "generatingWord": "Generando..."
+    "generatingWord": "Generando...",
+    "newHostIs": "{name} es ahora el anfitrión",
+    "playerRejoined": "{name} se reconectó a la sala",
+    "failedToLeaveRoom": "Error al salir de la sala"
   },
   "MultiplayerSetup": {
     "title": "Configuración Multijugador",
