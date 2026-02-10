@@ -134,7 +134,8 @@
     "onlyHostCanStart": "Solo el anfitrión puede iniciar el juego",
     "needMinPlayers": "Se necesitan al menos {min} jugadores para iniciar",
     "roomCodeCopied": "¡Código de sala copiado!",
-    "copyRoomCode": "Copiar código de sala"
+    "copyRoomCode": "Copiar código de sala",
+    "generatingWord": "Generando..."
   },
   "MultiplayerSetup": {
     "title": "Configuración Multijugador",

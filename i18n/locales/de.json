@@ -134,7 +134,8 @@
     "onlyHostCanStart": "Nur der Host kann das Spiel starten",
     "needMinPlayers": "Mindestens {min} Spieler erforderlich",
     "roomCodeCopied": "Raumcode kopiert!",
-    "copyRoomCode": "Raumcode kopieren"
+    "copyRoomCode": "Raumcode kopieren",
+    "generatingWord": "Wird generiert..."
   },
   "MultiplayerSetup": {
     "title": "Mehrspieler-Einrichtung",

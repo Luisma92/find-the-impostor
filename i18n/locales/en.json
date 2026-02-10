@@ -134,7 +134,8 @@
     "onlyHostCanStart": "Only the host can start the game",
     "needMinPlayers": "Need at least {min} players to start",
     "roomCodeCopied": "Room code copied!",
-    "copyRoomCode": "Copy room code"
+    "copyRoomCode": "Copy room code",
+    "generatingWord": "Generating..."
   },
   "MultiplayerSetup": {
     "title": "Multiplayer Setup",
