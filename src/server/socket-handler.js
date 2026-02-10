@@ -439,10 +439,10 @@ function initializeSocketServer(server) {
         // Update room with new game state
         const updatedRoom = roomManager.updateGameState(roomCode, {
           currentWord: gameConfig.currentWord,
-          currentHints: gameConfig.aiHints,
-          currentCategory: gameConfig.category,
+          currentHints: gameConfig.currentHints,
+          currentCategory: gameConfig.currentCategory || gameConfig.category,
           selectedCategories: gameConfig.selectedCategories,
-          difficulty: gameConfig.complexity,
+          difficulty: gameConfig.difficulty || gameConfig.complexity,
           showHintsToImpostors: gameConfig.showHintsToImpostors,
           impostorCount: gameConfig.impostorCount,
           players: playersForGameState,

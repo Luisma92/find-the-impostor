@@ -34,11 +34,16 @@ export default function MultiplayerWordRevealPhase() {
 
   // Reset card state when game restarts (detected by word change)
   useEffect(() => {
+    console.log("Word changed, resetting card state:", {
+      newWord: gameState.currentWord,
+      newHints: gameState.currentHints,
+      hintsCount: gameState.currentHints?.length,
+    });
     setIsCardFlipped(false);
     setRandomHint("");
     setAllRevealed(false);
     setIsStartingDiscussion(false);
-  }, [gameState.currentWord]);
+  }, [gameState.currentWord, gameState.currentHints]);
 
   // Listen for player revealed updates
   useEffect(() => {
@@ -80,8 +85,15 @@ export default function MultiplayerWordRevealPhase() {
 
     if (currentPlayer?.role === "impostor" && gameState.showHintsToImpostors) {
       const hints = gameState.currentHints;
+      console.log("Impostor flipping card - available hints:", {
+        word: gameState.currentWord,
+        hints: hints,
+        hintsCount: hints?.length,
+      });
       const randomIndex = Math.floor(Math.random() * hints.length);
-      setRandomHint(hints[randomIndex]);
+      const selectedHint = hints[randomIndex];
+      console.log("Selected hint:", selectedHint);
+      setRandomHint(selectedHint);
     }
   };
 

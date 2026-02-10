@@ -97,6 +97,12 @@ export function ResultsPhase() {
       const newWord = wordData.word;
       const newHints = wordData.hints || [];
 
+      console.log("Restart game - Generated new word and hints:", {
+        word: newWord,
+        hints: newHints,
+        category,
+      });
+
       // Prepare game config for restart
       const gameConfig = {
         currentWord: newWord,
@@ -107,6 +113,8 @@ export function ResultsPhase() {
         showHintsToImpostors: gameState.showHintsToImpostors,
         impostorCount: gameState.impostorCount,
       };
+
+      console.log("Sending restart-game with config:", gameConfig);
 
       // Emit restart-game event to server
       socketService.restartGame(gameConfig, response => {
@@ -138,6 +146,12 @@ export function ResultsPhase() {
           gameState.difficulty,
         );
 
+        console.log("Restart game (fallback) - Generated word and hints:", {
+          word: wordData.word,
+          hints: wordData.hints,
+          category,
+        });
+
         // Prepare game config for restart
         const gameConfig = {
           currentWord: wordData.word,
@@ -148,6 +162,8 @@ export function ResultsPhase() {
           showHintsToImpostors: gameState.showHintsToImpostors,
           impostorCount: gameState.impostorCount,
         };
+
+        console.log("Sending restart-game (fallback) with config:", gameConfig);
 
         // Emit restart-game event to server
         socketService.restartGame(gameConfig, response => {

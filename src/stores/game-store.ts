@@ -203,6 +203,14 @@ export const useGameStore = create<GameStore>()(
       },
 
       updateGameStateFromServer: gameState => {
+        console.log("updateGameStateFromServer received:", {
+          currentWord: gameState.currentWord,
+          currentHints: gameState.currentHints,
+          hintsCount: gameState.currentHints?.length,
+          phase: gameState.phase,
+          playersCount: gameState.players?.length,
+        });
+
         set(state => ({
           gameState: { ...state.gameState, ...gameState },
         }));
