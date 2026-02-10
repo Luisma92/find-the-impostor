@@ -17,12 +17,14 @@ interface MultiplayerLobbyProps {
   onBack: () => void;
   onStartGame: () => void;
   isHostMode?: boolean; // True when host is in lobby after creating room
+  roomJustCreated?: boolean; // True when room was just created, prevents showing "creating room" screen
 }
 
 export function MultiplayerLobby({
   onBack,
   onStartGame,
   isHostMode = false,
+  roomJustCreated = false,
 }: MultiplayerLobbyProps) {
   const { isConnected } = useSocket();
   const [mode, setMode] = useState<"select" | "join">(
@@ -68,7 +70,7 @@ export function MultiplayerLobby({
 
     const handleRoomClosed = (data: { message: string }) => {
       toast.error(data.message);
-      setRoomData("", "", "", false);
+      setRoomData("", "", "");
       setMode("select");
     };
 
@@ -89,23 +91,6 @@ export function MultiplayerLobby({
       setPlayers(gameState.players);
     }
   }, [gameState.players]);
-
-  // Debug: Log when isHostMode changes
-  useEffect(() => {
-    console.log("MultiplayerLobby - isHostMode:", isHostMode);
-    console.log("MultiplayerLobby - inRoom:", inRoom);
-    console.log("MultiplayerLobby - gameState.roomCode:", gameState.roomCode);
-    console.log("MultiplayerLobby - currentPlayerId:", currentPlayerId);
-    console.log("MultiplayerLobby - gameState.hostId:", gameState.hostId);
-    console.log("MultiplayerLobby - isHost:", isHost);
-  }, [
-    isHostMode,
-    inRoom,
-    gameState.roomCode,
-    currentPlayerId,
-    gameState.hostId,
-    isHost,
-  ]);
 
   const handleJoinRoom = useCallback(() => {
     if (!playerName.trim()) {
@@ -254,7 +239,7 @@ export function MultiplayerLobby({
               <Button
                 onClick={handleStartGame}
                 disabled={players.length < 3}
-                className="flex-1"
+                className="flex-1 cursor-pointer disabled:cursor-not-allowed"
               >
                 {t("startGame", {
                   count: players.length,
@@ -274,8 +259,9 @@ export function MultiplayerLobby({
     );
   }
 
-  // If host mode but not in room yet, show loading
-  if (isHostMode && !inRoom) {
+  // If host mode but room wasn't just created and not in room yet, show loading
+  // This prevents showing "creating room" screen after the room was already created
+  if (isHostMode && !roomJustCreated && !inRoom) {
     return (
       <div className="flex min-h-screen items-center justify-center p-4">
         <Card className="w-full max-w-md p-8 text-center">

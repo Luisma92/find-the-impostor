@@ -46,6 +46,7 @@ export default function Game() {
   const [multiplayerStep, setMultiplayerStep] = useState<
     "lobby" | "setup" | "waiting"
   >("lobby"); // lobby = join, setup = host configuring, waiting = host in lobby
+  const [roomWasCreated, setRoomWasCreated] = useState(false); // Track if room was just created by host
 
   useEffect(() => {
     if (!gameState.phase) {
@@ -53,11 +54,21 @@ export default function Game() {
     }
   }, [gameState.phase, setPhase]);
 
+  // When game starts in multiplayer mode, ensure we stay in multiplayer mode
+  useEffect(() => {
+    if (
+      gameState.gameStarted &&
+      gameState.isMultiplayer &&
+      gameMode !== "multiplayer"
+    ) {
+      setGameMode("multiplayer");
+    }
+  }, [gameState.gameStarted, gameState.isMultiplayer, gameMode]);
+
   // Listen to Socket.IO events for multiplayer
   useGameStarted(
     useCallback(
       (data: { gameState: Partial<import("@/src/types/game").GameState> }) => {
-        console.log("game-started event received:", data.gameState);
         updateGameStateFromServer(data.gameState);
         toast.success(t("gameStarted"));
       },
@@ -132,24 +143,17 @@ export default function Game() {
     setGameMode("select");
     setIsMultiplayer(false);
     setMultiplayerStep("lobby");
+    setRoomWasCreated(false);
     newGame();
   };
 
   const handleCreateRoom = useCallback(
     (hostName: string) => {
       // Called after host configures game settings
-      console.log("Creating room with host name:", hostName);
-      console.log("Socket connected:", socketService.isConnected());
-
       if (!socketService.isConnected()) {
-        console.log("Socket not connected, connecting now...");
         socketService.connect();
         // Wait a bit for connection
         setTimeout(() => {
-          console.log(
-            "Socket connected after wait:",
-            socketService.isConnected(),
-          );
           createRoomRequest(hostName);
         }, 1000);
       } else {
@@ -158,16 +162,15 @@ export default function Game() {
 
       function createRoomRequest(name: string) {
         socketService.createRoom(name, response => {
-          console.log("Create room response:", response);
           if (response.success && response.roomCode && response.playerId) {
             setRoomData(
               response.roomCode,
               response.playerId,
               response.room!.hostId,
-              true,
             );
             updatePlayers(response.room!.players);
             toast.success(t("roomCreated", { code: response.roomCode }));
+            setRoomWasCreated(true); // Mark room as created
             setMultiplayerStep("waiting");
           } else {
             toast.error(response.error || t("failedToCreateRoom"));
@@ -191,16 +194,6 @@ export default function Game() {
   if (!gameState.phase || !_hasHydrated) {
     return null;
   }
-
-  // Debug logging
-  console.log("Game render - gameMode:", gameMode);
-  console.log("Game render - multiplayerStep:", multiplayerStep);
-  console.log("Game render - gameState.gameStarted:", gameState.gameStarted);
-  console.log("Game render - gameState.phase:", gameState.phase);
-  console.log(
-    "Game render - gameState.isMultiplayer:",
-    gameState.isMultiplayer,
-  );
 
   // Mode selection screen
   if (gameMode === "select") {
@@ -293,6 +286,7 @@ export default function Game() {
         onBack={handleLobbyBack}
         onStartGame={handleMultiplayerStart}
         isHostMode={multiplayerStep === "waiting"}
+        roomJustCreated={roomWasCreated}
       />
     );
   }
