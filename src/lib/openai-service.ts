@@ -18,12 +18,9 @@ export class OpenAIService {
     this.config = config;
     this.client = new OpenRouter({
       apiKey: config.apiKey,
-      baseURL: config.baseUrl,
-      defaultHeaders: {
-        "HTTP-Referer":
-          process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
-        "X-Title": "Party Game Word Generator",
-      },
+      serverURL: config.baseUrl,
+      httpReferer: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+      xTitle: "Party Game Word Generator",
     });
   }
 
