@@ -530,6 +530,10 @@ export const useGameStore = create<GameStore>()(
             gameStarted: state.gameState.gameStarted,
             phase: state.gameState.phase,
             players: state.gameState.players,
+            // Persist game data for reconnection during active game
+            currentWord: state.gameState.currentWord,
+            currentHints: state.gameState.currentHints,
+            currentCategory: state.gameState.currentCategory,
           },
         }) as Partial<GameStore>,
       onRehydrateStorage: () => state => {

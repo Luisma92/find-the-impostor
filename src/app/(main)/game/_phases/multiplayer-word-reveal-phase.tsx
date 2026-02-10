@@ -32,6 +32,24 @@ export default function MultiplayerWordRevealPhase() {
   const isHost = currentPlayerId === gameState.hostId;
   const hasRevealed = currentPlayer?.hasRevealed || false;
 
+  // Debug log to understand Player not found issue
+  useEffect(() => {
+    console.log("MultiplayerWordReveal - Player state:", {
+      currentPlayerId,
+      currentPlayerFound: !!currentPlayer,
+      allPlayerIds: gameState.players.map(p => p.id),
+      playersCount: gameState.players.length,
+      gameStarted: gameState.gameStarted,
+      phase: gameState.phase,
+    });
+  }, [
+    currentPlayerId,
+    currentPlayer,
+    gameState.players,
+    gameState.gameStarted,
+    gameState.phase,
+  ]);
+
   // Reset card state when game restarts (detected by word change)
   useEffect(() => {
     console.log("Word changed, resetting card state:", {

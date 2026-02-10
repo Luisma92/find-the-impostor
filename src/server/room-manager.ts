@@ -203,6 +203,10 @@ class RoomManager {
     return this.rooms.size;
   }
 
+  deleteRoom(code: string): boolean {
+    return this.rooms.delete(code);
+  }
+
   // Cleanup old rooms and disconnected players
   cleanupOldRooms(maxAgeMinutes: number = 60): number {
     const now = new Date();
