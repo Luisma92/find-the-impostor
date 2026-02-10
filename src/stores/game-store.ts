@@ -35,6 +35,7 @@ interface GameStore {
     hostId: string,
     isHost: boolean,
   ) => void;
+  clearRoomData: () => void;
   setIsMultiplayer: (isMultiplayer: boolean) => void;
   updateGameStateFromServer: (gameState: Partial<GameState>) => void;
   updatePlayers: (players: Player[]) => void;
@@ -194,12 +195,45 @@ export const useGameStore = create<GameStore>()(
           },
           currentPlayerId: playerId,
         }));
+        // Persist in localStorage for reconnection
+        if (typeof window !== "undefined") {
+          if (roomCode && playerId) {
+            localStorage.setItem("roomCode", roomCode);
+            localStorage.setItem("playerId", playerId);
+            localStorage.setItem("hostId", hostId);
+          } else {
+            localStorage.removeItem("roomCode");
+            localStorage.removeItem("playerId");
+            localStorage.removeItem("hostId");
+          }
+        }
       },
 
       setIsMultiplayer: isMultiplayer => {
         set(state => ({
           gameState: { ...state.gameState, isMultiplayer },
         }));
+      },
+
+      clearRoomData: () => {
+        set(state => ({
+          gameState: {
+            ...state.gameState,
+            roomCode: undefined,
+            hostId: undefined,
+            isMultiplayer: false,
+            gameStarted: false,
+            phase: "setup",
+            players: [],
+          },
+          currentPlayerId: null,
+        }));
+        // Clear localStorage (individual keys and Zustand persist will auto-sync)
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("roomCode");
+          localStorage.removeItem("playerId");
+          localStorage.removeItem("hostId");
+        }
       },
 
       updateGameStateFromServer: gameState => {
@@ -432,8 +466,18 @@ export const useGameStore = create<GameStore>()(
             currentWord: "",
             currentHints: [],
             currentCategory: "",
+            roomCode: undefined,
+            hostId: undefined,
+            isMultiplayer: false,
           },
+          currentPlayerId: null,
         }));
+        // Clear localStorage when starting new game
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("roomCode");
+          localStorage.removeItem("playerId");
+          localStorage.removeItem("hostId");
+        }
       },
     }),
     {
@@ -472,13 +516,20 @@ export const useGameStore = create<GameStore>()(
         ({
           customCategories: state.customCategories,
           playerNames: state.playerNames,
+          currentPlayerId: state.currentPlayerId,
           gameState: {
             totalPlayers: state.gameState.totalPlayers,
             impostorCount: state.gameState.impostorCount,
-
             difficulty: state.gameState.difficulty,
             selectedCategories: state.gameState.selectedCategories,
             showHintsToImpostors: state.gameState.showHintsToImpostors,
+            // Persist multiplayer room data
+            roomCode: state.gameState.roomCode,
+            hostId: state.gameState.hostId,
+            isMultiplayer: state.gameState.isMultiplayer,
+            gameStarted: state.gameState.gameStarted,
+            phase: state.gameState.phase,
+            players: state.gameState.players,
           },
         }) as Partial<GameStore>,
       onRehydrateStorage: () => state => {

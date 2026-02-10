@@ -54,6 +54,47 @@ export default function Game() {
     }
   }, [gameState.phase, setPhase]);
 
+  // Restore multiplayer state when page reloads and we have room data
+  useEffect(() => {
+    // Check both Zustand store and localStorage for room data
+    const localRoomCode =
+      typeof window !== "undefined" ? localStorage.getItem("roomCode") : null;
+    const hasRoomInStore = gameState.roomCode && gameState.isMultiplayer;
+    const hasRoomInLocalStorage = localRoomCode && localRoomCode.length > 0;
+
+    if (_hasHydrated && (hasRoomInStore || hasRoomInLocalStorage)) {
+      const roomCode = gameState.roomCode || localRoomCode || "";
+
+      console.log("Restoring multiplayer state on page load", {
+        roomCode,
+        gameStarted: gameState.gameStarted,
+        fromStore: hasRoomInStore,
+        fromLocalStorage: hasRoomInLocalStorage,
+      });
+
+      setGameMode("multiplayer");
+      setIsMultiplayer(true);
+
+      if (gameState.gameStarted) {
+        // Game is already running, don't show lobby
+        setMultiplayerStep("setup");
+      } else {
+        // Game not started yet, show lobby
+        setMultiplayerStep("lobby");
+        setRoomWasCreated(true); // Treat as if room was created to show lobby correctly
+      }
+
+      // Ensure socket is connected for reconnection attempt
+      socketService.connect();
+    }
+  }, [
+    _hasHydrated,
+    gameState.roomCode,
+    gameState.isMultiplayer,
+    gameState.gameStarted,
+    setIsMultiplayer,
+  ]);
+
   // When game starts in multiplayer mode, ensure we stay in multiplayer mode
   useEffect(() => {
     if (

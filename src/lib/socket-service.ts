@@ -10,17 +10,44 @@ import { io, Socket } from "socket.io-client";
 class SocketService {
   private socket: Socket;
   private static instance: SocketService;
+  private reconnectAttempts = 0;
+  private maxReconnectAttempts = 5;
+  private reconnectDelay = 1000;
 
   private constructor() {
     // Create socket instance but don't connect yet
     this.socket = io({
       path: "/api/socket",
       autoConnect: false, // Don't connect until explicitly called
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: 5,
     });
 
     // Setup event handlers
     this.socket.on("connect_error", error => {
       console.error("Socket.IO connection error:", error);
+    });
+
+    this.socket.on("connect", () => {
+      console.log("Socket connected");
+
+      // Attempt rejoin before resetting counter
+      this.attemptRejoin();
+
+      // Reset counter after rejoin attempt
+      this.reconnectAttempts = 0;
+    });
+
+    this.socket.on("disconnect", reason => {
+      console.log("Socket disconnected:", reason);
+      this.reconnectAttempts++;
+
+      if (reason === "io server disconnect") {
+        // Server disconnected us, try to reconnect manually
+        setTimeout(() => this.connect(), this.reconnectDelay);
+      }
     });
   }
 
@@ -40,6 +67,84 @@ class SocketService {
     return this.socket;
   }
 
+  private attemptRejoin(): void {
+    // Try to rejoin room after reconnection or on initial page load
+    if (typeof window === "undefined") return;
+
+    // Small delay to ensure localStorage is synced if clearRoomData was just called
+    setTimeout(() => {
+      const roomCode = localStorage.getItem("roomCode");
+      const playerId = localStorage.getItem("playerId");
+
+      // Attempt rejoin if we have both roomCode and playerId
+      if (roomCode && playerId) {
+        this.performRejoin(roomCode, playerId);
+      }
+    }, 100);
+  }
+
+  private performRejoin(roomCode: string, playerId: string): void {
+    console.log(
+      "Attempting to rejoin room:",
+      roomCode,
+      "reconnectAttempts:",
+      this.reconnectAttempts,
+    );
+    this.socket.emit(
+      "rejoin-room",
+      { roomCode, oldPlayerId: playerId },
+      (response: {
+        success: boolean;
+        newPlayerId?: string;
+        room?: {
+          code: string;
+          hostId: string;
+          players: Player[];
+          gameState: GameState;
+        };
+        error?: string;
+      }) => {
+        if (response.success && response.room) {
+          console.log("Rejoined room successfully:", {
+            roomCode: response.room.code,
+            playerId: response.newPlayerId || playerId,
+            gameStarted: response.room.gameState.gameStarted,
+            playersCount: response.room.players.length,
+          });
+          // Update localStorage with new playerId if provided
+          if (response.newPlayerId) {
+            localStorage.setItem("playerId", response.newPlayerId);
+          }
+          // Notify about successful rejoin via custom event
+          window.dispatchEvent(
+            new CustomEvent("room-rejoined", {
+              detail: {
+                room: response.room,
+                playerId: response.newPlayerId || playerId,
+                isReconnection: this.reconnectAttempts > 0,
+              },
+            }),
+          );
+        } else {
+          console.log("Failed to rejoin room:", response.error);
+          // Clear invalid room data
+          localStorage.removeItem("roomCode");
+          localStorage.removeItem("playerId");
+          localStorage.removeItem("hostId");
+          // Notify about failed rejoin
+          window.dispatchEvent(
+            new CustomEvent("room-rejoin-failed", {
+              detail: {
+                error: response.error,
+                isReconnection: this.reconnectAttempts > 0,
+              },
+            }),
+          );
+        }
+      },
+    );
+  }
+
   disconnect(): void {
     if (this.socket.connected) {
       this.socket.disconnect();
@@ -54,6 +159,50 @@ class SocketService {
     return this.socket.connected;
   }
 
+  leaveRoom(
+    callback?: (response: { success: boolean; error?: string }) => void,
+  ): void {
+    if (!this.socket.connected) {
+      if (callback) callback({ success: false, error: "Not connected" });
+      return;
+    }
+
+    this.socket.emit(
+      "leave-room",
+      {}, // Empty data object to match server signature
+      (response: { success: boolean; error?: string }) => {
+        // Clear localStorage
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("roomCode");
+          localStorage.removeItem("playerId");
+          localStorage.removeItem("hostId");
+        }
+        if (callback) callback(response);
+      },
+    );
+  }
+
+  closeRoom(
+    callback?: (response: { success: boolean; error?: string }) => void,
+  ): void {
+    if (!this.socket.connected) {
+      if (callback) callback({ success: false, error: "Not connected" });
+      return;
+    }
+
+    this.socket.emit(
+      "close-room",
+      (response: { success: boolean; error?: string }) => {
+        // Clear localStorage
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("roomCode");
+          localStorage.removeItem("playerId");
+          localStorage.removeItem("hostId");
+        }
+        if (callback) callback(response);
+      },
+    );
+  }
   // Room actions
   createRoom(
     hostName: string,
@@ -73,6 +222,13 @@ class SocketService {
     if (!this.socket.connected) {
       callback({ success: false, error: "Not connected" });
       return;
+    }
+
+    // Clear any old localStorage data when creating a new room
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("roomCode");
+      localStorage.removeItem("playerId");
+      localStorage.removeItem("hostId");
     }
 
     const data: CreateRoomData = { hostName };
@@ -97,6 +253,16 @@ class SocketService {
     if (!this.socket.connected) {
       callback({ success: false, error: "Not connected" });
       return;
+    }
+
+    // Clear any old localStorage data when joining a new room
+    if (typeof window !== "undefined") {
+      const oldRoomCode = localStorage.getItem("roomCode");
+      if (oldRoomCode && oldRoomCode !== roomCode) {
+        localStorage.removeItem("roomCode");
+        localStorage.removeItem("playerId");
+        localStorage.removeItem("hostId");
+      }
     }
 
     const data: JoinRoomData = { roomCode, playerName };
