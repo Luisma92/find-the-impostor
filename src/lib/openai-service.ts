@@ -56,9 +56,6 @@ export class OpenAIService {
           frequencyPenalty: 0.1,
           presencePenalty: 0.1,
           stream: false,
-          reasoning: {
-            effort: "none",
-          },
         },
       });
 
