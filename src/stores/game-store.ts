@@ -234,40 +234,81 @@ export const useGameStore = create<GameStore>()(
         if (gameState.isMultiplayer) {
           const { socketService } = await import("@/src/lib/socket-service");
 
-          // Generate word first
+          // Generate word first - call API directly
           const randomCategory =
             gameState.selectedCategories[
               Math.floor(Math.random() * gameState.selectedCategories.length)
             ];
-          const wordWithHints = await getRandomWordWithHints(
-            randomCategory,
-            language,
-            gameState.difficulty,
-          );
 
-          console.log(
-            `Starting multiplayer game with category: ${randomCategory}, word: ${
-              wordWithHints.word
-            }, hints: ${wordWithHints.hints.join(", ")}`,
-          );
+          try {
+            // Call API directly to ensure AI generation
+            const response = await fetch("/api/generate-words", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                category: randomCategory,
+                language,
+                count: 1,
+                difficulty: gameState.difficulty,
+              }),
+            });
 
-          // Send configuration to server
-          socketService.startGame(
-            {
-              currentWord: wordWithHints.word,
-              currentHints: wordWithHints.hints,
-              currentCategory: randomCategory,
-              selectedCategories: gameState.selectedCategories,
-              difficulty: gameState.difficulty,
-              showHintsToImpostors: gameState.showHintsToImpostors,
-              impostorCount: gameState.impostorCount,
-            },
-            response => {
-              if (!response.success) {
-                console.error("Failed to start game:", response.error);
-              }
-            },
-          );
+            if (!response.ok) {
+              throw new Error("API call failed");
+            }
+
+            const data = await response.json();
+            const wordData = data.wordsWithHints[0];
+
+            console.log(
+              `Starting multiplayer game with category: ${randomCategory}, word: ${
+                wordData.word
+              }, hints: ${wordData.hints.join(", ")}`,
+            );
+
+            // Send configuration to server
+            socketService.startGame(
+              {
+                currentWord: wordData.word,
+                currentHints: wordData.hints,
+                currentCategory: randomCategory,
+                selectedCategories: gameState.selectedCategories,
+                difficulty: gameState.difficulty,
+                showHintsToImpostors: gameState.showHintsToImpostors,
+                impostorCount: gameState.impostorCount,
+              },
+              response => {
+                if (!response.success) {
+                  console.error("Failed to start game:", response.error);
+                }
+              },
+            );
+          } catch (error) {
+            console.error("Error calling API, using fallback:", error);
+            // Fallback to getRandomWordWithHints if API fails
+            const wordWithHints = await getRandomWordWithHints(
+              randomCategory,
+              language,
+              gameState.difficulty,
+            );
+
+            socketService.startGame(
+              {
+                currentWord: wordWithHints.word,
+                currentHints: wordWithHints.hints,
+                currentCategory: randomCategory,
+                selectedCategories: gameState.selectedCategories,
+                difficulty: gameState.difficulty,
+                showHintsToImpostors: gameState.showHintsToImpostors,
+                impostorCount: gameState.impostorCount,
+              },
+              response => {
+                if (!response.success) {
+                  console.error("Failed to start game:", response.error);
+                }
+              },
+            );
+          }
 
           return;
         }

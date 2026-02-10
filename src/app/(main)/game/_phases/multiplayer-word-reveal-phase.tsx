@@ -50,8 +50,8 @@ export default function MultiplayerWordRevealPhase() {
       const players = data.players as Array<{ hasRevealed?: boolean }>;
       updatePlayers(players as Player[]);
 
-      // Check if all players have revealed
-      const allPlayersRevealed = players.every(p => p.hasRevealed);
+      // Check if all players have revealed (ensure all have the property set)
+      const allPlayersRevealed = players.every(p => p.hasRevealed === true);
       setAllRevealed(allPlayersRevealed);
     };
 
@@ -65,11 +65,13 @@ export default function MultiplayerWordRevealPhase() {
     };
   }, [updatePlayers]);
 
-  // Check initial state
+  // Check initial state and sync with server data
   useEffect(() => {
-    const allPlayersRevealed = gameState.players.every(p => p.hasRevealed);
+    const allPlayersRevealed = gameState.players.every(
+      p => p.hasRevealed === true,
+    );
     setAllRevealed(allPlayersRevealed);
-  }, [gameState.players]);
+  }, [gameState.players, gameState.currentWord]);
 
   const handleCardFlip = () => {
     if (isCardFlipped || hasRevealed) return;
@@ -103,6 +105,27 @@ export default function MultiplayerWordRevealPhase() {
       return;
     }
 
+    // Double-check that all players have actually revealed
+    const allHaveRevealed = gameState.players.every(
+      p => p.hasRevealed === true,
+    );
+    if (!allHaveRevealed) {
+      const revealedCount = gameState.players.filter(p => p.hasRevealed).length;
+      console.error("Not all players have revealed!", {
+        revealed: revealedCount,
+        total: gameState.players.length,
+        players: gameState.players.map(p => ({
+          name: p.name,
+          revealed: p.hasRevealed,
+        })),
+      });
+      toast.error(
+        tReveal("notAllPlayersRevealed") ||
+          `Not all players ready (${revealedCount}/${gameState.players.length})`,
+      );
+      return;
+    }
+
     setIsStartingDiscussion(true);
     socketService.changePhase("discussion", response => {
       if (response.success) {
@@ -112,7 +135,7 @@ export default function MultiplayerWordRevealPhase() {
         setIsStartingDiscussion(false); // Re-enable on error
       }
     });
-  }, [isHost, tReveal, isStartingDiscussion]);
+  }, [isHost, tReveal, isStartingDiscussion, gameState.players]);
 
   if (!currentPlayer) {
     return (
@@ -163,7 +186,11 @@ export default function MultiplayerWordRevealPhase() {
                         </span>
                       )}
                     </span>
-                    <Eye className="h-4 w-4 text-green-400" />
+                    {player.hasRevealed ? (
+                      <Eye className="h-4 w-4 text-green-400" />
+                    ) : (
+                      <EyeOff className="h-4 w-4 text-zinc-600" />
+                    )}
                   </div>
                 ))}
               </div>
