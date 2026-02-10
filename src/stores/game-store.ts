@@ -201,14 +201,9 @@ export const useGameStore = create<GameStore>()(
       },
 
       updateGameStateFromServer: gameState => {
-        console.log("updateGameStateFromServer called with:", gameState);
-        set(state => {
-          const newState = {
-            gameState: { ...state.gameState, ...gameState },
-          };
-          console.log("New state after update:", newState);
-          return newState;
-        });
+        set(state => ({
+          gameState: { ...state.gameState, ...gameState },
+        }));
       },
 
       updatePlayers: players => {
