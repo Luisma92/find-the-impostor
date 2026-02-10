@@ -37,31 +37,40 @@ export class OpenAIService {
       retryCount === 0 ? this.config.model : this.config.fallbackModel!;
 
     try {
-      const completion = await this.client.chat.completions.create({
-        model: currentModel,
-        messages: [
-          {
-            role: "system",
-            content: this.getSystemPrompt(),
+      const completion = await this.client.chat.send({
+        chatGenerationParams: {
+          model: currentModel,
+          messages: [
+            {
+              role: "system",
+              content: this.getSystemPrompt(),
+            },
+            {
+              role: "user",
+              content: prompt,
+            },
+          ],
+          responseFormat: {
+            type: "json_object",
           },
-          {
-            role: "user",
-            content: prompt,
+          maxTokens: 3000,
+          temperature: 0.7,
+          topP: 0.9,
+          frequencyPenalty: 0.1,
+          presencePenalty: 0.1,
+          stream: false,
+          reasoning: {
+            effort: "none",
           },
-        ],
-        response_format: {
-          type: "json_object",
         },
-        max_tokens: 1500,
-        temperature: 0.7,
-        top_p: 0.9,
-        frequency_penalty: 0.1, // Encourage variety
-        presence_penalty: 0.1,
       });
 
-      const content = completion.choices[0]?.message?.content;
+      const message = completion.choices?.[0]?.message;
+      // Some models use 'reasoning' field instead of 'content'
+      const content = message?.content || (message as any)?.reasoning;
 
       if (!content) {
+        console.error(`Invalid response structure. Completion:`, completion);
         throw new Error("Invalid response structure from OpenRouter");
       }
 

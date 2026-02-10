@@ -207,13 +207,6 @@ export async function POST(request: NextRequest) {
       culturalContext: "universal",
     });
 
-    console.log(
-      `Generating ${count} words for category "${category}" in ${language} (${difficulty} difficulty) for IP: ${clientIP.substring(
-        0,
-        8,
-      )}...`,
-    );
-
     const result = await openAIService.generateWords(prompt, {});
 
     if (!PromptEngine.validateResponse(result, count)) {
@@ -241,14 +234,11 @@ export async function POST(request: NextRequest) {
     }
 
     const responseTime = Date.now() - startTime;
-
-    console.log(
-      `Successfully generated ${validWords.length}/${count} words in ${responseTime}ms for ${category}:${language}`,
-    );
+    const finalWords = validWords.slice(0, count);
 
     return NextResponse.json(
       {
-        wordsWithHints: validWords.slice(0, count), // Ensure exact count
+        wordsWithHints: finalWords, // Ensure exact count
         metadata: {
           category,
           language,
@@ -271,17 +261,12 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     const responseTime = Date.now() - startTime;
-    console.error(`Word generation failed for ${clientIP}:`, error);
+    console.error(`❌ Word generation FAILED for ${clientIP}:`, error);
 
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error occurred";
     const isAPIError = errorMessage.includes("OpenRouter API error");
     const isRateLimitError = errorMessage.includes("rate limit");
-
-    // If API failed, try to use fallback words
-    console.log(
-      `⚠️  API error, attempting to use fallback words for category "${category}" in ${language}`,
-    );
 
     const categoryKey = category.toLowerCase();
     const fallbacksForLanguage =
@@ -297,10 +282,6 @@ export async function POST(request: NextRequest) {
         const selectedWords = fallbackWords
           .sort(() => Math.random() - 0.5)
           .slice(0, count);
-
-        console.log(
-          `✅ Using ${selectedWords.length} fallback words after API failure`,
-        );
 
         return NextResponse.json(
           {
