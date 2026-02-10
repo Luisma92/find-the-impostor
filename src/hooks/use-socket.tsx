@@ -33,7 +33,6 @@ export function useSocketEvent<T = unknown>(
 ) {
   useEffect(() => {
     const socket = socketService.getSocket();
-    if (!socket) return;
 
     socket.on(event, callback);
 

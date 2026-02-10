@@ -8,10 +8,21 @@ import type {
 import { io, Socket } from "socket.io-client";
 
 class SocketService {
-  private socket: Socket | null = null;
+  private socket: Socket;
   private static instance: SocketService;
 
-  private constructor() {}
+  private constructor() {
+    // Create socket instance but don't connect yet
+    this.socket = io({
+      path: "/api/socket",
+      autoConnect: false, // Don't connect until explicitly called
+    });
+
+    // Setup event handlers
+    this.socket.on("connect_error", error => {
+      console.error("Socket.IO connection error:", error);
+    });
+  }
 
   static getInstance(): SocketService {
     if (!SocketService.instance) {
@@ -21,43 +32,26 @@ class SocketService {
   }
 
   connect(): Socket {
-    if (this.socket?.connected) {
+    if (this.socket.connected) {
       return this.socket;
     }
 
-    this.socket = io({
-      path: "/api/socket",
-      autoConnect: true,
-    });
-
-    this.socket.on("connect", () => {
-      console.log("Connected to Socket.IO server:", this.socket?.id);
-    });
-
-    this.socket.on("disconnect", () => {
-      console.log("Disconnected from Socket.IO server");
-    });
-
-    this.socket.on("connect_error", error => {
-      console.error("Socket.IO connection error:", error);
-    });
-
+    this.socket.connect();
     return this.socket;
   }
 
   disconnect(): void {
-    if (this.socket) {
+    if (this.socket.connected) {
       this.socket.disconnect();
-      this.socket = null;
     }
   }
 
-  getSocket(): Socket | null {
+  getSocket(): Socket {
     return this.socket;
   }
 
   isConnected(): boolean {
-    return this.socket?.connected ?? false;
+    return this.socket.connected;
   }
 
   // Room actions
@@ -76,7 +70,7 @@ class SocketService {
       error?: string;
     }) => void,
   ): void {
-    if (!this.socket) {
+    if (!this.socket.connected) {
       callback({ success: false, error: "Not connected" });
       return;
     }
@@ -100,7 +94,7 @@ class SocketService {
       error?: string;
     }) => void,
   ): void {
-    if (!this.socket) {
+    if (!this.socket.connected) {
       callback({ success: false, error: "Not connected" });
       return;
     }
@@ -114,7 +108,7 @@ class SocketService {
     gameState: GameState,
     callback: (response: { success: boolean; error?: string }) => void,
   ): void {
-    if (!this.socket) {
+    if (!this.socket.connected) {
       callback({ success: false, error: "Not connected" });
       return;
     }
@@ -125,7 +119,7 @@ class SocketService {
   playerRevealed(
     callback: (response: { success: boolean; error?: string }) => void,
   ): void {
-    if (!this.socket) {
+    if (!this.socket.connected) {
       callback({ success: false, error: "Not connected" });
       return;
     }
@@ -137,7 +131,7 @@ class SocketService {
     phase: GameState["phase"],
     callback: (response: { success: boolean; error?: string }) => void,
   ): void {
-    if (!this.socket) {
+    if (!this.socket.connected) {
       callback({ success: false, error: "Not connected" });
       return;
     }
@@ -148,7 +142,7 @@ class SocketService {
   revealImpostor(
     callback: (response: { success: boolean; error?: string }) => void,
   ): void {
-    if (!this.socket) {
+    if (!this.socket.connected) {
       callback({ success: false, error: "Not connected" });
       return;
     }
@@ -156,8 +150,28 @@ class SocketService {
     this.socket.emit("reveal-impostor", callback);
   }
 
+  restartGame(
+    gameConfig: {
+      currentWord: string;
+      currentHints: string[];
+      currentCategory: string;
+      selectedCategories: string[];
+      difficulty: string;
+      showHintsToImpostors: boolean;
+      impostorCount: number;
+    },
+    callback: (response: { success: boolean; error?: string }) => void,
+  ): void {
+    if (!this.socket.connected) {
+      callback({ success: false, error: "Not connected" });
+      return;
+    }
+
+    this.socket.emit("restart-game", gameConfig, callback);
+  }
+
   sendNotification(notification: NotificationData): void {
-    if (!this.socket) return;
+    if (!this.socket.connected) return;
     this.socket.emit("send-notification", notification);
   }
 
@@ -169,23 +183,23 @@ class SocketService {
       players: Player[];
     }) => void,
   ): void {
-    this.socket?.on("player-joined", callback);
+    this.socket.on("player-joined", callback);
   }
 
   onPlayerLeft(
     callback: (data: { playerId: string; players: Player[] }) => void,
   ): void {
-    this.socket?.on("player-left", callback);
+    this.socket.on("player-left", callback);
   }
 
   onGameStarted(callback: (data: { gameState: GameState }) => void): void {
-    this.socket?.on("game-started", callback);
+    this.socket.on("game-started", callback);
   }
 
   onPlayerRevealedUpdate(
     callback: (data: { playerId: string; players: Player[] }) => void,
   ): void {
-    this.socket?.on("player-revealed-update", callback);
+    this.socket.on("player-revealed-update", callback);
   }
 
   onPhaseChanged(
@@ -194,29 +208,30 @@ class SocketService {
       gameState: GameState;
     }) => void,
   ): void {
-    this.socket?.on("phase-changed", callback);
+    this.socket.on("phase-changed", callback);
   }
 
   onImpostorRevealed(
     callback: (data: { impostors: Player[]; word: string }) => void,
   ): void {
-    this.socket?.on("impostor-revealed", callback);
+    this.socket.on("impostor-revealed", callback);
   }
 
   onRoomClosed(callback: (data: { message: string }) => void): void {
-    this.socket?.on("room-closed", callback);
+    this.socket.on("room-closed", callback);
   }
 
   onNotification(callback: (notification: NotificationData) => void): void {
-    this.socket?.on("notification", callback);
+    this.socket.on("notification", callback);
   }
 
   // Remove listeners
-  removeListener(event: string, callback?: (...args: unknown[]) => void): void {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  removeListener(event: string, callback?: (...args: any[]) => void): void {
     if (callback) {
-      this.socket?.off(event, callback);
+      this.socket.off(event, callback);
     } else {
-      this.socket?.off(event);
+      this.socket.off(event);
     }
   }
 
