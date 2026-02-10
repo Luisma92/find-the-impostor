@@ -21,6 +21,11 @@ export function ResultsPhase() {
   const [isRestarting, setIsRestarting] = useState(false);
 
   const handlePlayAgain = async () => {
+    // Prevent multiple simultaneous restarts
+    if (isRestarting) {
+      return;
+    }
+
     if (!isMultiplayer || !isHost) return;
 
     setIsRestarting(true);
@@ -39,6 +44,9 @@ export function ResultsPhase() {
       }
 
       // Generate new word with same configuration
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
       const response = await fetch("/api/generate-words", {
         method: "POST",
         headers: {
@@ -50,7 +58,10 @@ export function ResultsPhase() {
           count: 1,
           difficulty: gameState.difficulty,
         }),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         // Try to get error details

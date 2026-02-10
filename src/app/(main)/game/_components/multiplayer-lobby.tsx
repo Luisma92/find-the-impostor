@@ -41,6 +41,7 @@ export function MultiplayerLobby({
   const setRoomData = useGameStore(state => state.setRoomData);
   const updatePlayers = useGameStore(state => state.updatePlayers);
   const currentPlayerId = useGameStore(state => state.currentPlayerId);
+  const isGeneratingWord = useGameStore(state => state.isGeneratingWord);
 
   const inRoom = !!gameState.roomCode;
   const isHost = currentPlayerId === gameState.hostId;
@@ -247,13 +248,15 @@ export function MultiplayerLobby({
             {isHost && (
               <Button
                 onClick={handleStartGame}
-                disabled={players.length < 3}
+                disabled={players.length < 3 || isGeneratingWord}
                 className="flex-1 cursor-pointer disabled:cursor-not-allowed"
               >
-                {t("startGame", {
-                  count: players.length,
-                  total: gameState.totalPlayers || 10,
-                })}
+                {isGeneratingWord
+                  ? t("generatingWord") || "Generating..."
+                  : t("startGame", {
+                      count: players.length,
+                      total: gameState.totalPlayers || 10,
+                    })}
               </Button>
             )}
           </div>
