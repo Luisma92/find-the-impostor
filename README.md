@@ -2,7 +2,7 @@
 
 # 🕵️ Find the Impostor
 
-  <a href="https://impostor.knotzer.io">
+  <a href="https://find-the-impostor-online-production.up.railway.app">
     <img src="./public/images/impostor-logo-rounded.png" alt="Find the Impostor Logo" width="200">
   </a>
 
@@ -14,7 +14,7 @@
 
 **A local-first party game PWA where players guess the secret word while impostors try to blend in**
 
-[🎮 Play Demo 🎮](https://impostor.knotzer.io)
+[🎮 Play Live 🎮](https://find-the-impostor-online-production.up.railway.app)
 
 </div>
 
@@ -22,8 +22,7 @@
 
 > [!NOTE]
 > The AI demo is currently running on a personal budget, which has now been used up, so you might notice some errors or fallback words.
-> If you enjoy the project and feel generous, you can [buy me a coffee](https://buymeacoffee.com/knotzer) or [sponsor me on GitHub](https://github.com/sponsors/knotzerio).  
-
+> If you enjoy the project and feel generous, you can [buy me a coffee](https://buymeacoffee.com/knotzer) or [sponsor me on GitHub](https://github.com/sponsors/knotzerio).
 
 ## 🎮 How to Play
 
@@ -83,6 +82,13 @@
 - **🔌 Offline First**: Play without internet connection
 - **📊 Local Data**: All game data stored locally with IndexedDB
 
+### 🌍 **Online Multiplayer**
+
+- **🔌 Reconnection**: Rejoin a room after refresh or temporary disconnects
+- **👑 Host Transfer**: Host role can move to another player if the host disconnects
+- **🚪 Room Control**: Host can close the room and return everyone to the menu
+- **🧠 State Sync**: Player roles and reveal status stay consistent after rejoin
+
 ### 🛠️ **Developer Experience**
 
 - **🎨 Modern UI**: Built with Shadcn and Tailwind CSS
@@ -103,7 +109,7 @@
 
 ```bash
 # Clone the repository
-git clone https://github.com/KnotzerIO/find-the-impostor.git
+git clone https://github.com/Luisma92/find-the-impostor.git
 cd find-the-impostor
 
 # Install dependencies
@@ -122,6 +128,10 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+### Live Demo
+
+[https://find-the-impostor-online-production.up.railway.app](https://find-the-impostor-online-production.up.railway.app)
 
 ### Building for Production
 
@@ -165,3 +175,9 @@ npm run start
 
 - **[ESLint](https://eslint.org/)** - Code linting
 - **[Turbopack](https://turbo.build/pack)** - Fast development builds
+
+---
+
+## 📌 Attribution
+
+This project is a fork of [KnotzerIO/find-the-impostor](https://github.com/KnotzerIO/find-the-impostor) by Mark Knotzer and is licensed under the MIT License. This fork includes additional multiplayer and reconnection features while preserving the original copyright notice.
