@@ -194,6 +194,23 @@ export function useImpostorRevealed(
   }, [callback]);
 }
 
+export function useVotingResults(
+  callback: (data: {
+    votingResults: unknown[];
+    winners: string[];
+    players: Player[];
+    impostors: Player[];
+    word: string;
+  }) => void,
+) {
+  useEffect(() => {
+    socketService.onVotingResults(callback);
+    return () => {
+      socketService.removeListener("voting-results", callback);
+    };
+  }, [callback]);
+}
+
 export function useRoomClosed(callback: (data: { message: string }) => void) {
   useEffect(() => {
     socketService.onRoomClosed(callback);

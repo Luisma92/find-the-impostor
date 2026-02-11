@@ -336,6 +336,29 @@ class SocketService {
     this.socket.emit("restart-game", gameConfig, callback);
   }
 
+  submitVote(
+    votedForId: string,
+    callback: (response: { success: boolean; error?: string }) => void,
+  ): void {
+    if (!this.socket.connected) {
+      callback({ success: false, error: "Not connected" });
+      return;
+    }
+
+    this.socket.emit("submit-vote", { votedForId }, callback);
+  }
+
+  calculateVotes(
+    callback: (response: { success: boolean; error?: string }) => void,
+  ): void {
+    if (!this.socket.connected) {
+      callback({ success: false, error: "Not connected" });
+      return;
+    }
+
+    this.socket.emit("calculate-votes", callback);
+  }
+
   sendNotification(notification: NotificationData): void {
     if (!this.socket.connected) return;
     this.socket.emit("send-notification", notification);
@@ -381,6 +404,18 @@ class SocketService {
     callback: (data: { impostors: Player[]; word: string }) => void,
   ): void {
     this.socket.on("impostor-revealed", callback);
+  }
+
+  onVotingResults(
+    callback: (data: {
+      votingResults: unknown[];
+      winners: string[];
+      players: Player[];
+      impostors: Player[];
+      word: string;
+    }) => void,
+  ): void {
+    this.socket.on("voting-results", callback);
   }
 
   onRoomClosed(callback: (data: { message: string }) => void): void {
