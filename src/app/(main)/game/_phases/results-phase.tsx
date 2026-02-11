@@ -7,11 +7,18 @@ import { useGameStore } from "@/src/stores/game-store";
 import { RotateCcw, Home, Play } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
 export function ResultsPhase() {
-  const { gameState, newGame, currentPlayerId, clearRoomData } = useGameStore();
+  const {
+    gameState,
+    newGame,
+    currentPlayerId,
+    clearRoomData,
+    setCurrentPlayerId,
+    updatePlayers,
+  } = useGameStore();
   const t = useTranslations("ResultsPhase");
   const router = useRouter();
   const locale = useLocale() as Locale;
@@ -19,6 +26,32 @@ export function ResultsPhase() {
   const isMultiplayer = gameState.isMultiplayer;
   const isHost = currentPlayerId === gameState.hostId;
   const [isRestarting, setIsRestarting] = useState(false);
+
+  // Listen for player reconnection
+  useEffect(() => {
+    const handlePlayerRejoined = (data: {
+      oldPlayerId: string;
+      newPlayerId: string;
+      playerName: string;
+      players: unknown[];
+    }) => {
+      // If the rejoined player is the current player, update currentPlayerId
+      if (currentPlayerId === data.oldPlayerId) {
+        console.log(
+          "Updating currentPlayerId in results phase:",
+          data.newPlayerId,
+        );
+        setCurrentPlayerId(data.newPlayerId);
+      }
+      updatePlayers(data.players as typeof gameState.players);
+    };
+
+    socketService.getSocket().on("player-rejoined", handlePlayerRejoined);
+
+    return () => {
+      socketService.getSocket().off("player-rejoined", handlePlayerRejoined);
+    };
+  }, [currentPlayerId, setCurrentPlayerId, updatePlayers]);
 
   const handlePlayAgain = async () => {
     // Prevent multiple simultaneous restarts

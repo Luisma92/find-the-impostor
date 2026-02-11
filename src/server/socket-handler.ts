@@ -178,10 +178,11 @@ export function initializeSocketServer(server: HTTPServer) {
               roomCode: data.roomCode,
               gameStarted: room.gameState.gameStarted,
               playersCount: room.players.size,
+              wasHost: room.hostId === socket.id,
             });
 
-            // Notify others about reconnection
-            socket.to(data.roomCode).emit("player-rejoined", {
+            // Notify ALL players (including the one who rejoined) about reconnection
+            io.in(data.roomCode).emit("player-rejoined", {
               oldPlayerId: data.oldPlayerId,
               newPlayerId: socket.id,
               playerName: updatedPlayer.name,

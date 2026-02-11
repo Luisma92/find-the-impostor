@@ -257,7 +257,12 @@ export const useGameStore = create<GameStore>()(
       },
 
       setCurrentPlayerId: playerId => {
+        console.log("Setting current player ID:", playerId);
         set({ currentPlayerId: playerId });
+        // Also update in localStorage to ensure persistence
+        if (typeof window !== "undefined" && playerId) {
+          localStorage.setItem("playerId", playerId);
+        }
       },
 
       setPhase: phase => {

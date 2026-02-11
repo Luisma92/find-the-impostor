@@ -8,7 +8,13 @@ import { useCallback, useEffect } from "react";
 import { toast } from "sonner";
 
 export default function DiscussionPhase() {
-  const { gameState, endGame, currentPlayerId } = useGameStore();
+  const {
+    gameState,
+    endGame,
+    currentPlayerId,
+    setCurrentPlayerId,
+    updatePlayers,
+  } = useGameStore();
   const t = useTranslations("DiscussionPhase");
   const tError = useTranslations("DiscussionPhase");
   const playImpostorSound = useSound("/sounds/impostor-sound.mp3", 1);
@@ -43,7 +49,32 @@ export default function DiscussionPhase() {
 
   useEffect(() => {
     playImpostorSound();
-  }, [playImpostorSound]);
+
+    // Listen for player reconnection
+    const handlePlayerRejoined = (data: {
+      oldPlayerId: string;
+      newPlayerId: string;
+      playerName: string;
+      players: unknown[];
+    }) => {
+      // If the rejoined player is the current player, update currentPlayerId
+      if (currentPlayerId === data.oldPlayerId) {
+        console.log(
+          "Updating currentPlayerId in discussion phase:",
+          data.newPlayerId,
+        );
+        setCurrentPlayerId(data.newPlayerId);
+      }
+      updatePlayers(data.players as typeof gameState.players);
+    };
+
+    socketService.getSocket().on("player-rejoined", handlePlayerRejoined);
+
+    return () => {
+      socketService.getSocket().off("player-rejoined", handlePlayerRejoined);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playImpostorSound, currentPlayerId, setCurrentPlayerId, updatePlayers]);
 
   const handleRevealImpostor = useCallback(() => {
     if (isMultiplayer) {

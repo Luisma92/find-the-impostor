@@ -20,7 +20,8 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export default function MultiplayerWordRevealPhase() {
-  const { gameState, currentPlayerId, updatePlayers } = useGameStore();
+  const { gameState, currentPlayerId, updatePlayers, setCurrentPlayerId } =
+    useGameStore();
   const t = useTranslations("WordRevealPhase");
   const tReveal = useTranslations("MultiplayerWordReveal");
   const [isCardFlipped, setIsCardFlipped] = useState(false);
@@ -78,15 +79,42 @@ export default function MultiplayerWordRevealPhase() {
       setAllRevealed(allPlayersRevealed);
     };
 
+    const handlePlayerRejoined = (data: {
+      oldPlayerId: string;
+      newPlayerId: string;
+      playerName: string;
+      players: Player[];
+    }) => {
+      console.log("Player rejoined during word reveal:", {
+        oldPlayerId: data.oldPlayerId,
+        newPlayerId: data.newPlayerId,
+        currentPlayerId,
+      });
+
+      // If the rejoined player is the current player, update currentPlayerId
+      if (currentPlayerId === data.oldPlayerId) {
+        console.log(
+          "Updating currentPlayerId in word reveal phase:",
+          data.newPlayerId,
+        );
+        setCurrentPlayerId(data.newPlayerId);
+      }
+
+      // Update players
+      updatePlayers(data.players);
+    };
+
     socketService.onPlayerRevealedUpdate(handlePlayerRevealedUpdate);
+    socketService.getSocket().on("player-rejoined", handlePlayerRejoined);
 
     return () => {
       socketService.removeListener(
         "player-revealed-update",
         handlePlayerRevealedUpdate,
       );
+      socketService.getSocket().off("player-rejoined", handlePlayerRejoined);
     };
-  }, [updatePlayers]);
+  }, [updatePlayers, currentPlayerId, setCurrentPlayerId]);
 
   // Check initial state and sync with server data
   useEffect(() => {

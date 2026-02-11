@@ -45,6 +45,7 @@ export function MultiplayerLobby({
   );
   const clearRoomData = useGameStore(state => state.clearRoomData);
   const currentPlayerId = useGameStore(state => state.currentPlayerId);
+  const setCurrentPlayerId = useGameStore(state => state.setCurrentPlayerId);
   const isGeneratingWord = useGameStore(state => state.isGeneratingWord);
 
   const inRoom = !!gameState.roomCode;
@@ -96,9 +97,41 @@ export function MultiplayerLobby({
       playerName: string;
       players: Player[];
     }) => {
+      console.log("Player rejoined event received:", {
+        oldPlayerId: data.oldPlayerId,
+        newPlayerId: data.newPlayerId,
+        currentPlayerId,
+        isCurrentPlayer: data.oldPlayerId === currentPlayerId,
+      });
+
+      // If the rejoined player is the current player, update currentPlayerId
+      if (currentPlayerId === data.oldPlayerId) {
+        console.log(
+          "Updating currentPlayerId from",
+          data.oldPlayerId,
+          "to",
+          data.newPlayerId,
+        );
+        setCurrentPlayerId(data.newPlayerId);
+
+        // Also update room data to reflect the new host ID if this player was/is host
+        if (gameState.hostId === data.oldPlayerId) {
+          setRoomData(
+            gameState.roomCode!,
+            data.newPlayerId,
+            data.newPlayerId,
+            true,
+          );
+        }
+      }
+
       setPlayers(data.players);
       updatePlayers(data.players);
-      toast.success(t("playerRejoined", { name: data.playerName }));
+
+      // Only show toast if it's not the current player (avoid duplicate toasts)
+      if (currentPlayerId !== data.oldPlayerId) {
+        toast.success(t("playerRejoined", { name: data.playerName }));
+      }
     };
 
     socketService.onPlayerJoined(handlePlayerJoined);
@@ -123,7 +156,18 @@ export function MultiplayerLobby({
       socketService.getSocket().off("host-changed", handleHostChanged);
       socketService.getSocket().off("player-rejoined", handlePlayerRejoined);
     };
-  }, [inRoom, updatePlayers, clearRoomData, updateGameStateFromServer, t]);
+  }, [
+    inRoom,
+    updatePlayers,
+    clearRoomData,
+    updateGameStateFromServer,
+    setCurrentPlayerId,
+    currentPlayerId,
+    gameState.roomCode,
+    gameState.hostId,
+    setRoomData,
+    t,
+  ]);
 
   // Sync players from gameState
   useEffect(() => {

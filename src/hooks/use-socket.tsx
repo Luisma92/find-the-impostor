@@ -60,9 +60,14 @@ export function useSocket() {
         hostId: room.hostId,
         playersCount: room.players.length,
         phase: room.gameState.phase,
+        newPlayerId: playerId,
       });
 
       // Update game store with rejoined room data
+      // CRITICAL: Update currentPlayerId first to ensure it's set before other updates
+      const setCurrentPlayerId = useGameStore.getState().setCurrentPlayerId;
+      setCurrentPlayerId(playerId);
+
       setRoomData(room.code, playerId, room.hostId, playerId === room.hostId);
       updateGameStateFromServer({ ...room.gameState, isMultiplayer: true });
       updatePlayers(room.players);
