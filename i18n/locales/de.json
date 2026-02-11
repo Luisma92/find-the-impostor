@@ -65,9 +65,27 @@
     "sayYourWords": "Sagt eure Wörter",
     "starts": "beginnt",
     "revealImpostor": "Impostor aufdecken",
+    "startVoting": "Abstimmung starten",
     "onlyHostCanReveal": "Nur der Host kann den Hochstapler aufdecken",
+    "onlyHostCanStartVoting": "Nur der Host kann die Abstimmung starten",
     "failedToReveal": "Hochstapler konnte nicht aufgedeckt werden",
-    "waitingForHostToRevealImpostor": "Warte darauf, dass der Host den Hochstapler aufdeckt..."
+    "failedToStartVoting": "Abstimmung konnte nicht gestartet werden",
+    "waitingForHostToRevealImpostor": "Warte darauf, dass der Host den Hochstapler aufdeckt...",
+    "waitingForHostToStartVoting": "Warte darauf, dass der Host die Abstimmung startet..."
+  },
+  "VotingPhase": {
+    "votingTime": "Abstimmungszeit!",
+    "selectImpostors": "Wähle {count} Hochstapler, die du verdächtigst",
+    "votesSubmitted": "{count} von {total} Spielern haben abgestimmt",
+    "submitVotes": "Stimmen absenden",
+    "voteRecorded": "Deine Stimme wurde registriert!",
+    "revealResults": "Ergebnisse aufdecken",
+    "waitingForHost": "Warte darauf, dass der Host die Ergebnisse aufdeckt...",
+    "selected": "Ausgewählt: {count}/{max}",
+    "selectAtLeastOne": "Wähle mindestens einen Spieler",
+    "mustSelectExact": "Du musst genau {count} Spieler auswählen",
+    "voteSubmitted": "Stimme erfolgreich abgegeben!",
+    "maxVotesReached": "Maximal {max} Stimmen erlaubt"
   },
   "ResultsPhase": {
     "results": "Ergebnisse",
@@ -81,7 +99,16 @@
     "returnToMenu": "Zurückkehr zum Spielmenü",
     "waitingForHost": "Warte auf Host...",
     "restartingGame": "Spiel wird neu gestartet...",
-    "gameRestarted": "Spiel neu gestartet!"
+    "gameRestarted": "Spiel neu gestartet!",
+    "votingResults": "Abstimmungsergebnisse",
+    "votes": "Stimmen",
+    "roundWinners": "Rundengewinner",
+    "leaderboard": "Bestenliste"
+  },
+  "errors": {
+    "onlyHostCanCalculate": "Nur der Host kann die Stimmen auszählen",
+    "failedToCalculateVotes": "Stimmen konnten nicht ausgezählt werden",
+    "failedToSubmitVote": "Stimme konnte nicht abgegeben werden"
   },
   "Error": {
     "somethingWentWrong": "Etwas ist schief gelaufen, bitte versuche es erneut."
@@ -97,6 +124,7 @@
     "gameStarted": "Spiel gestartet!",
     "phaseChanged": "Phase geändert",
     "impostorRevealed": "Der Hochstapler wurde aufgedeckt!",
+    "votingResultsRevealed": "Abstimmungsergebnisse aufgedeckt!",
     "roomCreated": "Raum erstellt: {code}",
     "failedToCreateRoom": "Raum konnte nicht erstellt werden",
     "failedToStartGame": "Spiel konnte nicht gestartet werden",

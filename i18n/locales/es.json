@@ -65,9 +65,27 @@
     "sayYourWords": "Di tus Palabras",
     "starts": "comienza",
     "revealImpostor": "Revelar Impostor",
+    "startVoting": "Iniciar Votación",
     "onlyHostCanReveal": "Solo el anfitrión puede revelar al impostor",
+    "onlyHostCanStartVoting": "Solo el anfitrión puede iniciar la votación",
     "failedToReveal": "Error al revelar el impostor",
-    "waitingForHostToRevealImpostor": "Esperando a que el anfitrión revele el impostor..."
+    "failedToStartVoting": "Error al iniciar la votación",
+    "waitingForHostToRevealImpostor": "Esperando a que el anfitrión revele el impostor...",
+    "waitingForHostToStartVoting": "Esperando a que el anfitrión inicie la votación..."
+  },
+  "VotingPhase": {
+    "votingTime": "¡Hora de Votar!",
+    "selectImpostors": "Selecciona {count} impostor(es) que sospechas",
+    "votesSubmitted": "{count} de {total} jugadores votaron",
+    "submitVotes": "Enviar Votos",
+    "voteRecorded": "¡Tu voto ha sido registrado!",
+    "revealResults": "Revelar Resultados",
+    "waitingForHost": "Esperando a que el anfitrión revele los resultados...",
+    "selected": "Seleccionados: {count}/{max}",
+    "selectAtLeastOne": "Selecciona al menos un jugador",
+    "mustSelectExact": "Debes seleccionar exactamente {count} jugador(es)",
+    "voteSubmitted": "¡Voto enviado exitosamente!",
+    "maxVotesReached": "Máximo {max} votos permitidos"
   },
   "ResultsPhase": {
     "results": "Resultados",
@@ -81,7 +99,16 @@
     "returnToMenu": "Volviendo al menú del juego",
     "waitingForHost": "Esperando al anfitrión...",
     "restartingGame": "Reiniciando partida...",
-    "gameRestarted": "¡Partida reiniciada!"
+    "gameRestarted": "¡Partida reiniciada!",
+    "votingResults": "Resultados de Votación",
+    "votes": "votos",
+    "roundWinners": "Ganadores de la Ronda",
+    "leaderboard": "Tabla de Posiciones"
+  },
+  "errors": {
+    "onlyHostCanCalculate": "Solo el anfitrión puede calcular los votos",
+    "failedToCalculateVotes": "Error al calcular los votos",
+    "failedToSubmitVote": "Error al enviar el voto"
   },
   "Error": {
     "somethingWentWrong": "Algo salió mal, por favor intenta de nuevo."
@@ -97,6 +124,7 @@
     "gameStarted": "¡Juego iniciado!",
     "phaseChanged": "Fase cambiada",
     "impostorRevealed": "¡El impostor ha sido revelado!",
+    "votingResultsRevealed": "¡Resultados de votación revelados!",
     "roomCreated": "Sala creada: {code}",
     "failedToCreateRoom": "Error al crear la sala",
     "failedToStartGame": "Error al iniciar el juego",

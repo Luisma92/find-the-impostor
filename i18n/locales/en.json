@@ -65,9 +65,27 @@
     "sayYourWords": "Say Your Words",
     "starts": "starts",
     "revealImpostor": "Reveal Impostor",
+    "startVoting": "Start Voting",
     "onlyHostCanReveal": "Only the host can reveal the impostor",
+    "onlyHostCanStartVoting": "Only the host can start voting",
     "failedToReveal": "Failed to reveal impostor",
-    "waitingForHostToRevealImpostor": "Waiting for host to reveal the impostor..."
+    "failedToStartVoting": "Failed to start voting",
+    "waitingForHostToRevealImpostor": "Waiting for host to reveal the impostor...",
+    "waitingForHostToStartVoting": "Waiting for host to start voting..."
+  },
+  "VotingPhase": {
+    "votingTime": "Voting Time!",
+    "selectImpostors": "Select {count} impostor(s) you suspect",
+    "votesSubmitted": "{count} of {total} players voted",
+    "submitVotes": "Submit Votes",
+    "voteRecorded": "Your vote has been recorded!",
+    "revealResults": "Reveal Results",
+    "waitingForHost": "Waiting for host to reveal results...",
+    "selected": "Selected: {count}/{max}",
+    "selectAtLeastOne": "Select at least one player",
+    "mustSelectExact": "You must select exactly {count} player(s)",
+    "voteSubmitted": "Vote submitted successfully!",
+    "maxVotesReached": "Maximum {max} votes allowed"
   },
   "ResultsPhase": {
     "results": "Results",
@@ -81,7 +99,16 @@
     "returnToMenu": "Returning to game menu",
     "waitingForHost": "Waiting for host...",
     "restartingGame": "Restarting game...",
-    "gameRestarted": "Game restarted!"
+    "gameRestarted": "Game restarted!",
+    "votingResults": "Voting Results",
+    "votes": "votes",
+    "roundWinners": "Round Winners",
+    "leaderboard": "Leaderboard"
+  },
+  "errors": {
+    "onlyHostCanCalculate": "Only the host can calculate votes",
+    "failedToCalculateVotes": "Failed to calculate votes",
+    "failedToSubmitVote": "Failed to submit vote"
   },
   "Error": {
     "somethingWentWrong": "Something went wrong, please try again."
@@ -97,6 +124,7 @@
     "gameStarted": "Game started!",
     "phaseChanged": "Phase changed",
     "impostorRevealed": "The impostor has been revealed!",
+    "votingResultsRevealed": "Voting results revealed!",
     "roomCreated": "Room created: {code}",
     "failedToCreateRoom": "Failed to create room",
     "failedToStartGame": "Failed to start game",
