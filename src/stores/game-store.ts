@@ -44,6 +44,7 @@ interface GameStore {
   startGame: (t: TranslationFunction, language: Locale) => Promise<void>;
   nextRevealPlayer: () => void;
   startDiscussion: () => void;
+  startVoting: () => void;
   endGame: () => void;
   newGame: () => void;
   setPhase: (phase: GameState["phase"]) => void;
@@ -451,6 +452,12 @@ export const useGameStore = create<GameStore>()(
       startDiscussion: () => {
         set(state => ({
           gameState: { ...state.gameState, phase: "discussion" },
+        }));
+      },
+
+      startVoting: () => {
+        set(state => ({
+          gameState: { ...state.gameState, phase: "voting", votes: [] },
         }));
       },
 
