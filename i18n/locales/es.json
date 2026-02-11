@@ -99,7 +99,14 @@
     "impostorRevealed": "¡El impostor ha sido revelado!",
     "roomCreated": "Sala creada: {code}",
     "failedToCreateRoom": "Error al crear la sala",
-    "failedToStartGame": "Error al iniciar el juego"
+    "failedToStartGame": "Error al iniciar el juego",
+    "leaveRoomTitle": "¿Salir de la Sala?",
+    "leaveRoomDescription": "¿Estás seguro de que quieres salir? Esto te sacará de la sala actual.",
+    "cancel": "Cancelar",
+    "leaveRoom": "Salir de la Sala",
+    "leftRoom": "Saliste de la sala",
+    "hostLeftRoom": "El anfitrión ha abandonado la sala",
+    "hostDisconnected": "El anfitrión se ha desconectado"
   },
   "MultiplayerLobby": {
     "connectingToServer": "Conectando al servidor...",

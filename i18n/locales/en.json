@@ -99,7 +99,14 @@
     "impostorRevealed": "The impostor has been revealed!",
     "roomCreated": "Room created: {code}",
     "failedToCreateRoom": "Failed to create room",
-    "failedToStartGame": "Failed to start game"
+    "failedToStartGame": "Failed to start game",
+    "leaveRoomTitle": "Leave Room?",
+    "leaveRoomDescription": "Are you sure you want to leave? This will remove you from the current room.",
+    "cancel": "Cancel",
+    "leaveRoom": "Leave Room",
+    "leftRoom": "You left the room",
+    "hostLeftRoom": "The host has left the room",
+    "hostDisconnected": "The host has disconnected"
   },
   "MultiplayerLobby": {
     "connectingToServer": "Connecting to server...",

@@ -99,7 +99,14 @@
     "impostorRevealed": "Der Hochstapler wurde aufgedeckt!",
     "roomCreated": "Raum erstellt: {code}",
     "failedToCreateRoom": "Raum konnte nicht erstellt werden",
-    "failedToStartGame": "Spiel konnte nicht gestartet werden"
+    "failedToStartGame": "Spiel konnte nicht gestartet werden",
+    "leaveRoomTitle": "Raum verlassen?",
+    "leaveRoomDescription": "Bist du sicher, dass du gehen möchtest? Du wirst aus dem aktuellen Raum entfernt.",
+    "cancel": "Abbrechen",
+    "leaveRoom": "Raum verlassen",
+    "leftRoom": "Du hast den Raum verlassen",
+    "hostLeftRoom": "Der Gastgeber hat den Raum verlassen",
+    "hostDisconnected": "Der Gastgeber hat die Verbindung getrennt"
   },
   "MultiplayerLobby": {
     "connectingToServer": "Verbinde mit Server...",

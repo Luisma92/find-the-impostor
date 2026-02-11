@@ -75,7 +75,18 @@ export function MultiplayerLobby({
     };
 
     const handleRoomClosed = (data: { message: string }) => {
-      toast.error(data.message);
+      // Map server messages to translation keys
+      let translatedMessage = data.message;
+      // Use translations from parent (GamePage) context if available, otherwise show raw message
+      if (data.message === "Host left the room") {
+        translatedMessage = "The host has left the room";
+      } else if (data.message === "Host disconnected") {
+        translatedMessage = "The host has disconnected";
+      } else if (data.message === "Host closed the room") {
+        translatedMessage = "The host has left the room";
+      }
+
+      toast.error(translatedMessage);
       clearRoomData();
       setMode("select");
     };

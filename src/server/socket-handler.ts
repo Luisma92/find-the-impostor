@@ -253,30 +253,66 @@ export function initializeSocketServer(server: HTTPServer) {
             return;
           }
 
-          const roomDeleted = roomManager.leaveRoom(roomCode, playerId);
+          const room = roomManager.getRoom(roomCode);
+          if (!room) {
+            actualCallback({ success: false, error: "Room not found" });
+            return;
+          }
 
-          if (roomDeleted) {
+          // Check if the player leaving is the host
+          const isHost = room.hostId === playerId;
+
+          if (isHost) {
+            // If host is leaving, close the room for everyone
+            console.log("Host is leaving, closing room for all players:", {
+              roomCode,
+              hostId: playerId,
+            });
+
+            // Emit room-closed to all players in the room
             io.in(roomCode).emit("room-closed", {
               message: "Host left the room",
             });
-          } else {
-            const room = roomManager.getRoom(roomCode);
-            if (room) {
-              io.to(roomCode).emit("player-left", {
-                playerId,
-                players: Array.from(room.players.values()),
+
+            // Get all sockets in the room and make them leave
+            const socketsInRoom = io.sockets.adapter.rooms.get(roomCode);
+            if (socketsInRoom) {
+              socketsInRoom.forEach(socketId => {
+                const clientSocket = io.sockets.sockets.get(socketId);
+                if (clientSocket) {
+                  clientSocket.leave(roomCode);
+                  const extClientSocket =
+                    clientSocket as unknown as ExtendedSocket;
+                  extClientSocket.roomCode = undefined;
+                  extClientSocket.playerId = undefined;
+                }
               });
             }
+
+            // Delete the room
+            roomManager.deleteRoom(roomCode);
+          } else {
+            // Regular player leaving, just remove them from the room
+            roomManager.leaveRoom(roomCode, playerId);
+
+            const updatedRoom = roomManager.getRoom(roomCode);
+            if (updatedRoom) {
+              io.to(roomCode).emit("player-left", {
+                playerId,
+                players: Array.from(updatedRoom.players.values()),
+              });
+            }
+
+            socket.leave(roomCode);
           }
 
-          socket.leave(roomCode);
           extSocket.roomCode = undefined;
           extSocket.playerId = undefined;
 
           console.log("leave-room success", {
             playerId,
             roomCode,
-            roomDeleted,
+            wasHost: isHost,
           });
           actualCallback({ success: true });
         } catch (error) {
@@ -714,23 +750,42 @@ export function initializeSocketServer(server: HTTPServer) {
         const room = roomManager.getRoom(roomCode);
 
         if (room) {
-          // Mark player as disconnected instead of removing them
-          const player = room.players.get(playerId);
-          if (player) {
-            player.isConnected = false;
-            console.log("Player marked as disconnected:", {
-              playerId,
-              playerName: player.name,
+          // Check if the disconnecting player is the host
+          const isHost = room.hostId === playerId;
+
+          if (isHost) {
+            // If host disconnects, close the room for everyone
+            console.log("Host disconnected, closing room for all players:", {
               roomCode,
-              remainingPlayers: room.players.size,
+              hostId: playerId,
             });
 
-            // Notify others that player disconnected (but stay in room for rejoin)
-            io.to(roomCode).emit("player-disconnected", {
-              playerId,
-              playerName: player.name,
-              players: Array.from(room.players.values()),
+            // Emit room-closed to all other players
+            socket.to(roomCode).emit("room-closed", {
+              message: "Host disconnected",
             });
+
+            // Delete the room
+            roomManager.deleteRoom(roomCode);
+          } else {
+            // Mark player as disconnected instead of removing them
+            const player = room.players.get(playerId);
+            if (player) {
+              player.isConnected = false;
+              console.log("Player marked as disconnected:", {
+                playerId,
+                playerName: player.name,
+                roomCode,
+                remainingPlayers: room.players.size,
+              });
+
+              // Notify others that player disconnected (but stay in room for rejoin)
+              io.to(roomCode).emit("player-disconnected", {
+                playerId,
+                playerName: player.name,
+                players: Array.from(room.players.values()),
+              });
+            }
           }
         }
       }

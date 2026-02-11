@@ -8,6 +8,14 @@ import MultiplayerWordRevealPhase from "./_phases/multiplayer-word-reveal-phase"
 import { ResultsPhase } from "./_phases/results-phase";
 import SetupPhase from "./_phases/setup-phase";
 import WordRevealPhase from "./_phases/word-reveal-phase";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/src/components/ui/button";
 import { Card } from "@/src/components/ui/card";
 import type { Locale } from "@/src/config/language";
@@ -47,6 +55,7 @@ export default function Game() {
     "lobby" | "setup" | "waiting"
   >("lobby"); // lobby = join, setup = host configuring, waiting = host in lobby
   const [roomWasCreated, setRoomWasCreated] = useState(false); // Track if room was just created by host
+  const [showLeaveConfirmation, setShowLeaveConfirmation] = useState(false);
 
   useEffect(() => {
     if (!gameState.phase) {
@@ -149,12 +158,22 @@ export default function Game() {
   useRoomClosed(
     useCallback(
       (data: { message: string }) => {
-        toast.error(data.message);
+        // Map server messages to translation keys
+        let translatedMessage = data.message;
+        if (data.message === "Host left the room") {
+          translatedMessage = t("hostLeftRoom");
+        } else if (data.message === "Host disconnected") {
+          translatedMessage = t("hostDisconnected");
+        } else if (data.message === "Host closed the room") {
+          translatedMessage = t("hostLeftRoom"); // Use same message for explicit close
+        }
+
+        toast.error(translatedMessage);
         setGameMode("select");
         setIsMultiplayer(false);
         newGame();
       },
-      [setIsMultiplayer, newGame],
+      [setIsMultiplayer, newGame, t],
     ),
   );
 
@@ -162,9 +181,19 @@ export default function Game() {
     if (gameState.phase === "setup" && gameMode === "select") {
       router.push("/");
     } else if (gameState.phase === "setup") {
+      // If in multiplayer with room, show confirmation
+      if (gameState.isMultiplayer && gameState.roomCode) {
+        setShowLeaveConfirmation(true);
+        return;
+      }
       setGameMode("select");
       setIsMultiplayer(false);
     } else {
+      // During active game, show confirmation if multiplayer
+      if (gameState.isMultiplayer && gameState.roomCode) {
+        setShowLeaveConfirmation(true);
+        return;
+      }
       newGame();
     }
   };
@@ -192,11 +221,39 @@ export default function Game() {
   };
 
   const handleLobbyBack = () => {
+    // If in multiplayer and has room, show confirmation dialog
+    if (gameState.isMultiplayer && gameState.roomCode) {
+      setShowLeaveConfirmation(true);
+      return;
+    }
+
+    // Otherwise, just go back
     setGameMode("select");
     setIsMultiplayer(false);
     setMultiplayerStep("lobby");
     setRoomWasCreated(false);
     newGame();
+  };
+
+  const handleConfirmLeave = () => {
+    // Leave the room via socket
+    socketService.leaveRoom(response => {
+      if (response.success) {
+        toast.success(t("leftRoom"));
+      }
+    });
+
+    // Clear local state
+    setShowLeaveConfirmation(false);
+    setGameMode("select");
+    setIsMultiplayer(false);
+    setMultiplayerStep("lobby");
+    setRoomWasCreated(false);
+    newGame();
+  };
+
+  const handleCancelLeave = () => {
+    setShowLeaveConfirmation(false);
   };
 
   const handleCreateRoom = useCallback(
@@ -345,38 +402,69 @@ export default function Game() {
   }
 
   return (
-    <div className="h-dvh">
-      {/* Button - hidden on mobile during setup because it needs different logic */}
-      <Button
-        onClick={handleReturn}
-        variant="ghost"
-        size="icon"
-        className={`absolute top-6 left-2 z-10 ${
-          gameState.phase === "setup" ? "max-md:hidden" : ""
-        }`}
+    <>
+      <div className="h-dvh">
+        {/* Button - hidden on mobile during setup because it needs different logic */}
+        <Button
+          onClick={handleReturn}
+          variant="ghost"
+          size="icon"
+          className={`absolute top-6 left-2 z-10 ${
+            gameState.phase === "setup" ? "max-md:hidden" : ""
+          }`}
+        >
+          <ArrowLeft className="size-6" />
+        </Button>
+
+        {gameState.phase === "setup" && (
+          <>
+            <div className="hidden md:block">
+              <SetupPhase />
+            </div>
+            <div className="md:hidden">
+              <MobileSetupPhase />
+            </div>
+          </>
+        )}
+
+        {gameState.phase === "wordreveal" &&
+          (gameState.isMultiplayer ? (
+            <MultiplayerWordRevealPhase />
+          ) : (
+            <WordRevealPhase />
+          ))}
+        {gameState.phase === "discussion" && <DiscussionPhase />}
+        {gameState.phase === "results" && <ResultsPhase />}
+      </div>
+
+      {/* Leave room confirmation dialog */}
+      <Dialog
+        open={showLeaveConfirmation}
+        onOpenChange={setShowLeaveConfirmation}
       >
-        <ArrowLeft className="size-6" />
-      </Button>
-
-      {gameState.phase === "setup" && (
-        <>
-          <div className="hidden md:block">
-            <SetupPhase />
-          </div>
-          <div className="md:hidden">
-            <MobileSetupPhase />
-          </div>
-        </>
-      )}
-
-      {gameState.phase === "wordreveal" &&
-        (gameState.isMultiplayer ? (
-          <MultiplayerWordRevealPhase />
-        ) : (
-          <WordRevealPhase />
-        ))}
-      {gameState.phase === "discussion" && <DiscussionPhase />}
-      {gameState.phase === "results" && <ResultsPhase />}
-    </div>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("leaveRoomTitle")}</DialogTitle>
+            <DialogDescription>{t("leaveRoomDescription")}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col gap-2 sm:flex-row">
+            <Button
+              variant="outline"
+              onClick={handleCancelLeave}
+              className="w-full sm:w-auto"
+            >
+              {t("cancel")}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmLeave}
+              className="w-full sm:w-auto"
+            >
+              {t("leaveRoom")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
