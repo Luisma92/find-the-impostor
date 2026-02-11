@@ -275,8 +275,8 @@ export function ResultsPhase() {
   };
 
   return (
-    <div className="flex h-dvh items-center justify-center p-6 text-white">
-      <div className="mx-auto w-full max-w-2xl space-y-10 text-center">
+    <div className="flex h-dvh overflow-y-auto px-6 py-12 text-white">
+      <div className="mx-auto my-auto w-full max-w-2xl space-y-10 text-center">
         <div className="space-y-3">
           <h1 className="text-4xl font-bold">{t("results")}</h1>
         </div>
