@@ -482,6 +482,9 @@ export function initializeSocketServer(server: HTTPServer) {
           phase: "wordreveal",
           players: currentPlayers,
           currentRevealIndex: 0,
+          votes: [], // Reset votes
+          votingResults: undefined, // Clear voting results
+          winners: undefined, // Clear winners
         });
 
         if (!updatedRoom) {
@@ -590,6 +593,116 @@ export function initializeSocketServer(server: HTTPServer) {
       }
     });
 
+    // Submit vote
+    socket.on("submit-vote", (data: { votedForId: string }, callback) => {
+      try {
+        const extSocket = socket as unknown as ExtendedSocket;
+        const roomCode = extSocket.roomCode;
+        const playerId = extSocket.playerId;
+
+        if (!roomCode || !playerId) {
+          callback({ success: false, error: "Not in a room" });
+          return;
+        }
+
+        const room = roomManager.getRoom(roomCode);
+        if (!room) {
+          callback({ success: false, error: "Room not found" });
+          return;
+        }
+
+        if (room.gameState.phase !== "voting") {
+          callback({ success: false, error: "Not in voting phase" });
+          return;
+        }
+
+        // Submit the vote
+        const updatedRoom = roomManager.submitVote(
+          roomCode,
+          playerId,
+          data.votedForId,
+        );
+
+        if (!updatedRoom) {
+          callback({ success: false, error: "Failed to submit vote" });
+          return;
+        }
+
+        // Notify all players about the vote update (without revealing who voted for whom)
+        const voteCount = (updatedRoom.gameState.votes || []).length;
+        const totalPlayers = updatedRoom.players.size;
+
+        io.in(roomCode).emit("vote-submitted", {
+          voteCount,
+          totalPlayers,
+        });
+
+        callback({ success: true });
+      } catch (error) {
+        console.error("Error submitting vote:", error);
+        callback({ success: false, error: "Failed to submit vote" });
+      }
+    });
+
+    // Calculate voting results (host only)
+    socket.on("calculate-votes", callback => {
+      try {
+        const extSocket = socket as unknown as ExtendedSocket;
+        const roomCode = extSocket.roomCode;
+
+        if (!roomCode) {
+          callback({ success: false, error: "Not in a room" });
+          return;
+        }
+
+        const room = roomManager.getRoom(roomCode);
+        if (!room) {
+          callback({ success: false, error: "Room not found" });
+          return;
+        }
+
+        if (room.hostId !== socket.id) {
+          callback({ success: false, error: "Only host can calculate votes" });
+          return;
+        }
+
+        // Calculate voting results and update wins
+        const updatedRoom = roomManager.calculateVotingResults(roomCode);
+
+        if (!updatedRoom) {
+          callback({ success: false, error: "Failed to calculate votes" });
+          return;
+        }
+
+        // Change phase to results
+        roomManager.updateGameState(roomCode, {
+          phase: "results",
+        });
+
+        // Notify all players including the host
+        io.in(roomCode).emit("voting-results", {
+          votingResults: updatedRoom.gameState.votingResults,
+          winners: updatedRoom.gameState.winners,
+          players: Array.from(updatedRoom.players.values()),
+          impostors: updatedRoom.gameState.players.filter(
+            p => p.role === "impostor",
+          ),
+          word: updatedRoom.gameState.currentWord,
+        });
+
+        // Also emit phase change
+        io.in(roomCode).emit("phase-changed", {
+          phase: "results",
+          gameState: updatedRoom.gameState,
+        });
+
+        callback({ success: true });
+      } catch (error) {
+        console.error("Error calculating votes:", error);
+        callback({ success: false, error: "Failed to calculate votes" });
+      }
+    });
+
     // Reveal impostor (host only)
     socket.on("reveal-impostor", callback => {
       try {
@@ -674,6 +787,7 @@ export function initializeSocketServer(server: HTTPServer) {
           ...p,
           role: "player" as "player" | "impostor",
           hasRevealed: false,
+          // Keep wins - don't reset them
         }));
 
         // Randomly assign impostor roles
@@ -709,6 +823,9 @@ export function initializeSocketServer(server: HTTPServer) {
           showHintsToImpostors: config.showHintsToImpostors,
           impostorCount: impostorCount, // Use validated value
           currentRevealIndex: 0,
+          votes: [], // Reset votes
+          votingResults: undefined, // Clear voting results
+          winners: undefined, // Clear winners
         });
 
         if (!updatedRoom) {

@@ -32,6 +32,7 @@ class RoomManager {
       role: "player",
       isConnected: true,
       hasRevealed: false,
+      wins: 0,
     };
 
     const room: RoomData = {
@@ -107,6 +108,7 @@ class RoomManager {
       role: "player",
       isConnected: true,
       hasRevealed: false,
+      wins: 0,
     };
 
     room.players.set(playerId, player);
@@ -197,6 +199,101 @@ class RoomManager {
     const room = this.rooms.get(code);
     if (!room) return [];
     return Array.from(room.players.values());
+  }
+
+  submitVote(
+    code: string,
+    voterId: string,
+    votedForId: string,
+  ): RoomData | null {
+    const room = this.rooms.get(code);
+    if (!room) return null;
+
+    // Initialize votes array if it doesn't exist
+    if (!room.gameState.votes) {
+      room.gameState.votes = [];
+    }
+
+    // Remove previous vote from this voter if exists
+    room.gameState.votes = room.gameState.votes.filter(
+      v => v.voterId !== voterId,
+    );
+
+    // Add new vote
+    room.gameState.votes.push({ voterId, votedForId });
+
+    return room;
+  }
+
+  calculateVotingResults(code: string): RoomData | null {
+    const room = this.rooms.get(code);
+    if (!room) return null;
+
+    const votes = room.gameState.votes || [];
+    const impostors = room.gameState.players.filter(p => p.role === "impostor");
+    const impostorIds = new Set(impostors.map(i => i.id));
+
+    // Count votes for each player
+    const voteCounts = new Map<string, number>();
+    room.gameState.players.forEach(p => {
+      voteCounts.set(p.id, 0);
+    });
+
+    votes.forEach(vote => {
+      const count = voteCounts.get(vote.votedForId) || 0;
+      voteCounts.set(vote.votedForId, count + 1);
+    });
+
+    // Calculate who voted correctly (voted for an impostor)
+    const correctVoters = new Set<string>();
+    votes.forEach(vote => {
+      if (impostorIds.has(vote.votedForId)) {
+        correctVoters.add(vote.voterId);
+      }
+    });
+
+    // Determine winners:
+    // - If any impostor was correctly identified by at least one vote,
+    //   players who voted correctly win
+    // - If no impostor was identified, impostors win
+    let winners: string[] = [];
+
+    const impostorsIdentified = Array.from(impostorIds).some(
+      impostorId => (voteCounts.get(impostorId) || 0) > 0,
+    );
+
+    if (impostorsIdentified) {
+      // Players who voted correctly win
+      winners = Array.from(correctVoters);
+    } else {
+      // Impostors win
+      winners = Array.from(impostorIds);
+    }
+
+    // Update wins for winners
+    winners.forEach(winnerId => {
+      const player = room.players.get(winnerId);
+      if (player) {
+        player.wins = (player.wins || 0) + 1;
+      }
+    });
+
+    // Update players array in gameState with new wins
+    room.gameState.players = Array.from(room.players.values());
+
+    // Create voting results
+    const votingResults = room.gameState.players.map(player => ({
+      playerId: player.id,
+      playerName: player.name,
+      voteCount: voteCounts.get(player.id) || 0,
+      isImpostor: impostorIds.has(player.id),
+      correctVote: correctVoters.has(player.id),
+    }));
+
+    room.gameState.votingResults = votingResults;
+    room.gameState.winners = winners;
+
+    return room;
   }
 
   getRoomCount(): number {
