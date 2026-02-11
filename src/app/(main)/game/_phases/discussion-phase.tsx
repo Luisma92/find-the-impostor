@@ -10,7 +10,7 @@ import { toast } from "sonner";
 export default function DiscussionPhase() {
   const {
     gameState,
-    endGame,
+    startVoting,
     currentPlayerId,
     setCurrentPlayerId,
     updatePlayers,
@@ -76,22 +76,22 @@ export default function DiscussionPhase() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playImpostorSound, currentPlayerId, setCurrentPlayerId, updatePlayers]);
 
-  const handleRevealImpostor = useCallback(() => {
+  const handleStartVoting = useCallback(() => {
     if (isMultiplayer) {
       if (!isHost) {
-        toast.error(tError("onlyHostCanReveal"));
+        toast.error(tError("onlyHostCanStartVoting"));
         return;
       }
 
-      socketService.revealImpostor(response => {
+      socketService.changePhase("voting", response => {
         if (!response.success) {
-          toast.error(response.error || tError("failedToReveal"));
+          toast.error(response.error || tError("failedToStartVoting"));
         }
       });
     } else {
-      endGame();
+      startVoting();
     }
-  }, [isMultiplayer, isHost, endGame, tError]);
+  }, [isMultiplayer, isHost, startVoting, tError]);
 
   return (
     <div className="flex h-dvh items-center justify-center p-6">
@@ -114,17 +114,17 @@ export default function DiscussionPhase() {
 
         <div className="space-y-3">
           <Button
-            onClick={handleRevealImpostor}
+            onClick={handleStartVoting}
             disabled={isMultiplayer && !isHost}
-            className="w-full rounded-xl bg-red-600 py-6 text-lg font-medium text-white transition-all duration-200 hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="w-full rounded-xl bg-purple-600 py-6 text-lg font-medium text-white transition-all duration-200 hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Eye className="mr-3 h-5 w-5" />
-            {t("revealImpostor")}
+            {t("startVoting")}
           </Button>
 
           {isMultiplayer && !isHost && (
             <p className="text-sm text-zinc-500">
-              {tError("waitingForHostToRevealImpostor")}
+              {tError("waitingForHostToStartVoting")}
             </p>
           )}
         </div>

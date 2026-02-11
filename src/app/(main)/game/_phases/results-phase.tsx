@@ -1,10 +1,11 @@
+import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { Separator } from "@/src/components/ui/separator";
 import { Locale } from "@/src/config/language";
 import { socketService } from "@/src/lib/socket-service";
 import { getRandomWordWithHints } from "@/src/lib/word-service";
 import { useGameStore } from "@/src/stores/game-store";
-import { RotateCcw, Home, Play } from "lucide-react";
+import { RotateCcw, Home, Play, Trophy, Target } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
@@ -26,6 +27,16 @@ export function ResultsPhase() {
   const isMultiplayer = gameState.isMultiplayer;
   const isHost = currentPlayerId === gameState.hostId;
   const [isRestarting, setIsRestarting] = useState(false);
+
+  // Check if voting results exist
+  const hasVotingResults =
+    gameState.votingResults && gameState.votingResults.length > 0;
+  const winners = gameState.winners || [];
+
+  // Sort players by wins (descending)
+  const playersByWins = [...gameState.players].sort(
+    (a, b) => (b.wins || 0) - (a.wins || 0),
+  );
 
   // Listen for player reconnection
   useEffect(() => {
@@ -265,7 +276,7 @@ export function ResultsPhase() {
 
   return (
     <div className="flex h-dvh items-center justify-center p-6 text-white">
-      <div className="mx-auto w-md space-y-12 text-center">
+      <div className="mx-auto w-full max-w-2xl space-y-10 text-center">
         <div className="space-y-3">
           <h1 className="text-4xl font-bold">{t("results")}</h1>
         </div>
@@ -298,6 +309,114 @@ export function ResultsPhase() {
             ))}
           </div>
         </div>
+
+        {hasVotingResults && (
+          <>
+            <Separator className="bg-zinc-800" />
+
+            <div className="space-y-4">
+              <p className="flex items-center justify-center gap-2 tracking-wider text-zinc-500 uppercase">
+                <Target className="h-5 w-5" />
+                {t("votingResults")}
+              </p>
+              <div className="space-y-2">
+                {gameState.votingResults?.map(result => (
+                  <div
+                    key={result.playerId}
+                    className={`rounded-xl border p-3 ${
+                      result.isImpostor
+                        ? "border-red-600/20 bg-red-600/10"
+                        : "border-zinc-700/50 bg-zinc-800/50"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-lg">
+                        {result.playerName}
+                        {result.isImpostor && (
+                          <Badge className="ml-2 border-red-600/30 bg-red-600/20 text-red-400">
+                            {t("impostor")}
+                          </Badge>
+                        )}
+                      </span>
+                      <span className="text-lg font-medium">
+                        {result.voteCount} {t("votes")}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
+        {winners.length > 0 && (
+          <>
+            <Separator className="bg-zinc-800" />
+
+            <div className="space-y-4">
+              <p className="flex items-center justify-center gap-2 tracking-wider text-zinc-500 uppercase">
+                <Trophy className="h-5 w-5" />
+                {t("roundWinners")}
+              </p>
+              <div className="space-y-3">
+                {gameState.players
+                  .filter(p => winners.includes(p.id))
+                  .map(winner => (
+                    <div
+                      key={winner.id}
+                      className="rounded-xl border border-yellow-600/20 bg-yellow-600/10 p-4"
+                    >
+                      <p className="text-xl font-light text-yellow-400">
+                        {winner.name}
+                      </p>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          </>
+        )}
+
+        <Separator className="bg-zinc-800" />
+
+        <div className="space-y-4">
+          <p className="flex items-center justify-center gap-2 tracking-wider text-zinc-500 uppercase">
+            <Trophy className="h-5 w-5" />
+            {t("leaderboard")}
+          </p>
+          <div className="space-y-2">
+            {playersByWins.map((player, index) => (
+              <div
+                key={player.id}
+                className={`rounded-xl border p-3 ${
+                  index === 0
+                    ? "border-yellow-600/30 bg-yellow-600/10"
+                    : "border-zinc-700/50 bg-zinc-800/50"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl font-bold text-zinc-600">
+                      #{index + 1}
+                    </span>
+                    <span className="text-lg">{player.name}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Trophy
+                      className={`h-5 w-5 ${
+                        index === 0 ? "text-yellow-400" : "text-zinc-600"
+                      }`}
+                    />
+                    <span className="text-lg font-medium">
+                      {player.wins || 0}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <Separator className="bg-zinc-800" />
 
         <Separator className="bg-zinc-800" />
 

@@ -7,6 +7,7 @@ import MultiplayerSetupPhase from "./_phases/multiplayer-setup-phase";
 import MultiplayerWordRevealPhase from "./_phases/multiplayer-word-reveal-phase";
 import { ResultsPhase } from "./_phases/results-phase";
 import SetupPhase from "./_phases/setup-phase";
+import VotingPhase from "./_phases/voting-phase";
 import WordRevealPhase from "./_phases/word-reveal-phase";
 import {
   Dialog,
@@ -23,6 +24,7 @@ import {
   useGameStarted,
   usePhaseChanged,
   useImpostorRevealed,
+  useVotingResults,
   useRoomClosed,
 } from "@/src/hooks/use-socket";
 import { socketService } from "@/src/lib/socket-service";
@@ -153,6 +155,27 @@ export default function Game() {
     useCallback(() => {
       toast.info(t("impostorRevealed"));
     }, [t]),
+  );
+
+  useVotingResults(
+    useCallback(
+      (data: {
+        votingResults: unknown[];
+        winners: string[];
+        players: import("@/src/types/game").Player[];
+        impostors: import("@/src/types/game").Player[];
+        word: string;
+      }) => {
+        updateGameStateFromServer({
+          votingResults:
+            data.votingResults as import("@/src/types/game").VotingResult[],
+          winners: data.winners,
+          players: data.players,
+        });
+        toast.success(t("votingResultsRevealed"));
+      },
+      [updateGameStateFromServer, t],
+    ),
   );
 
   useRoomClosed(
@@ -434,6 +457,7 @@ export default function Game() {
             <WordRevealPhase />
           ))}
         {gameState.phase === "discussion" && <DiscussionPhase />}
+        {gameState.phase === "voting" && <VotingPhase />}
         {gameState.phase === "results" && <ResultsPhase />}
       </div>
 
