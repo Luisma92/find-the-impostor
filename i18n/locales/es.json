@@ -173,7 +173,10 @@
     "generatingWord": "Generando...",
     "newHostIs": "{name} es ahora el anfitrión",
     "playerRejoined": "{name} se reconectó a la sala",
-    "failedToLeaveRoom": "Error al salir de la sala"
+    "failedToLeaveRoom": "Error al salir de la sala",
+    "hostLeftRoom": "El anfitrión ha abandonado la sala",
+    "hostDisconnected": "El anfitrión se ha desconectado",
+    "hostClosedRoom": "El anfitrión ha cerrado la sala"
   },
   "MultiplayerSetup": {
     "title": "Configuración Multijugador",
@@ -203,9 +206,41 @@
     "waitingForHostToStartDiscussion": "Esperando a que el anfitrión inicie la discusión...",
     "waitingForOtherPlayers": "Esperando a otros jugadores...",
     "of": "de",
-    "playersRevealed": "jugadores revelados"
+    "playersRevealed": "jugadores revelados",
+    "tapCardToReveal": "Toca la carta para revelar tu rol",
+    "playersReady": "Jugadores Listos",
+    "playerStatus": "Estado de Jugadores",
+    "confirmAndContinue": "Confirmar y Continuar",
+    "notAllPlayersRevealed": "No todos los jugadores están listos ({revealed}/{total})"
   },
   "Common": {
-    "impostorLogo": "Logo de Impostor"
+    "impostorLogo": "Logo de Impostor",
+    "you": "Tú",
+    "host": "Anfitrión"
+  },
+  "ResultsPhase": {
+    "results": "Resultados",
+    "theWordWas": "La Palabra Era",
+    "newGame": "Nuevo Juego",
+    "playAgain": "Jugar de Nuevo",
+    "category": "Categoría",
+    "impostor": "Impostor",
+    "impostors": "Impostores",
+    "backToMenu": "Volver al Menú",
+    "returnToMenu": "Volviendo al menú del juego",
+    "waitingForHost": "Esperando al anfitrión...",
+    "restartingGame": "Reiniciando partida...",
+    "gameRestarted": "¡Partida reiniciada!",
+    "votingResults": "Resultados de Votación",
+    "votes": "votos",
+    "roundWinners": "Ganadores de la Ronda",
+    "leaderboard": "Tabla de Posiciones",
+    "failedToRestartGame": "Error al reiniciar la partida",
+    "failedToGenerateWord": "Error al generar nueva palabra",
+    "failedToCloseRoom": "Error al cerrar la sala",
+    "failedToParseError": "Error al procesar el error",
+    "pleaseTryAgain": "Por favor intenta de nuevo",
+    "noCategoryAvailable": "No hay categoría disponible",
+    "noWordsReturned": "No se recibieron palabras del API"
   }
 }

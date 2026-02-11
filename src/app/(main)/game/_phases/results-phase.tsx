@@ -84,7 +84,7 @@ export function ResultsPhase() {
         ];
 
       if (!category || gameState.selectedCategories.length === 0) {
-        throw new Error("No category available");
+        throw new Error(t("noCategoryAvailable"));
       }
 
       // Generate new word with same configuration
@@ -116,7 +116,7 @@ export function ResultsPhase() {
           try {
             errorData = await response.json();
           } catch (e) {
-            console.error("Failed to parse error JSON:", e);
+            console.error(t("failedToParseError"), e);
           }
         } else {
           const textError = await response.text();
@@ -127,14 +127,14 @@ export function ResultsPhase() {
         console.error("API error response:", errorData);
         throw new Error(
           errorData.error ||
-            `Failed to generate word (${response.status}). Please try again.`,
+            `${t("failedToGenerateWord")} (${response.status}). ${t("pleaseTryAgain")}`,
         );
       }
 
       const data = await response.json();
 
       if (!data.wordsWithHints || data.wordsWithHints.length === 0) {
-        throw new Error("No words returned from API");
+        throw new Error(t("noWordsReturned"));
       }
 
       const wordData = data.wordsWithHints[0];
@@ -170,7 +170,7 @@ export function ResultsPhase() {
           toast.success(t("gameRestarted"));
         } else {
           toast.dismiss();
-          toast.error(response.error || "Failed to restart game");
+          toast.error(response.error || t("failedToRestartGame"));
         }
       });
     } catch (error) {
@@ -218,16 +218,14 @@ export function ResultsPhase() {
             toast.success(t("gameRestarted"));
           } else {
             toast.dismiss();
-            toast.error(response.error || "Failed to restart game");
+            toast.error(response.error || t("failedToRestartGame"));
           }
         });
       } catch (fallbackError) {
         setIsRestarting(false);
         toast.dismiss();
         const errorMessage =
-          error instanceof Error
-            ? error.message
-            : "Failed to generate new word";
+          error instanceof Error ? error.message : t("failedToGenerateWord");
         toast.error(errorMessage);
         console.error("Error with fallback words:", fallbackError);
       }
@@ -248,7 +246,7 @@ export function ResultsPhase() {
             router.push("/game");
             toast.info(t("returnToMenu"));
           } else {
-            toast.error(response.error || "Failed to close room");
+            toast.error(response.error || t("failedToCloseRoom"));
           }
         });
       } else {

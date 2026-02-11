@@ -173,7 +173,10 @@
     "generatingWord": "Wird generiert...",
     "newHostIs": "{name} ist jetzt der Gastgeber",
     "playerRejoined": "{name} hat sich wieder verbunden",
-    "failedToLeaveRoom": "Fehler beim Verlassen des Raums"
+    "failedToLeaveRoom": "Fehler beim Verlassen des Raums",
+    "hostLeftRoom": "Der Gastgeber hat den Raum verlassen",
+    "hostDisconnected": "Der Gastgeber hat die Verbindung getrennt",
+    "hostClosedRoom": "Der Gastgeber hat den Raum geschlossen"
   },
   "MultiplayerSetup": {
     "title": "Mehrspieler-Einrichtung",
@@ -203,9 +206,41 @@
     "waitingForHostToStartDiscussion": "Warte darauf, dass der Gastgeber die Diskussion startet...",
     "waitingForOtherPlayers": "Warte auf andere Spieler...",
     "of": "von",
-    "playersRevealed": "Spieler aufgedeckt"
+    "playersRevealed": "Spieler aufgedeckt",
+    "tapCardToReveal": "Tippe auf die Karte, um deine Rolle aufzudecken",
+    "playersReady": "Spieler Bereit",
+    "playerStatus": "Spielerstatus",
+    "confirmAndContinue": "Bestätigen & Fortfahren",
+    "notAllPlayersRevealed": "Nicht alle Spieler sind bereit ({revealed}/{total})"
   },
   "Common": {
-    "impostorLogo": "Hochstapler-Logo"
+    "impostorLogo": "Hochstapler-Logo",
+    "you": "Du",
+    "host": "Gastgeber"
+  },
+  "ResultsPhase": {
+    "results": "Ergebnisse",
+    "theWordWas": "Das Wort war",
+    "newGame": "Neues Spiel",
+    "playAgain": "Nochmal spielen",
+    "category": "Kategorie",
+    "impostor": "Hochstapler",
+    "impostors": "Hochstapler",
+    "backToMenu": "Zurück zum Menü",
+    "returnToMenu": "Zurückkehr zum Spielmenü",
+    "waitingForHost": "Warte auf Host...",
+    "restartingGame": "Spiel wird neu gestartet...",
+    "gameRestarted": "Spiel neu gestartet!",
+    "votingResults": "Abstimmungsergebnisse",
+    "votes": "Stimmen",
+    "roundWinners": "Rundengewinner",
+    "leaderboard": "Bestenliste",
+    "failedToRestartGame": "Spiel konnte nicht neu gestartet werden",
+    "failedToGenerateWord": "Neues Wort konnte nicht generiert werden",
+    "failedToCloseRoom": "Raum konnte nicht geschlossen werden",
+    "failedToParseError": "Fehler beim Verarbeiten des Fehlers",
+    "pleaseTryAgain": "Bitte versuche es erneut",
+    "noCategoryAvailable": "Keine Kategorie verfügbar",
+    "noWordsReturned": "Keine Wörter von der API erhalten"
   }
 }

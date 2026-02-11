@@ -173,7 +173,10 @@
     "generatingWord": "Generating...",
     "newHostIs": "{name} is now the host",
     "playerRejoined": "{name} reconnected to the room",
-    "failedToLeaveRoom": "Failed to leave room"
+    "failedToLeaveRoom": "Failed to leave room",
+    "hostLeftRoom": "The host has left the room",
+    "hostDisconnected": "The host has disconnected",
+    "hostClosedRoom": "The host has closed the room"
   },
   "MultiplayerSetup": {
     "title": "Multiplayer Setup",
@@ -203,9 +206,41 @@
     "waitingForHostToStartDiscussion": "Waiting for host to start discussion...",
     "waitingForOtherPlayers": "Waiting for other players...",
     "of": "of",
-    "playersRevealed": "players revealed"
+    "playersRevealed": "players revealed",
+    "tapCardToReveal": "Tap the card to reveal your role",
+    "playersReady": "Players Ready",
+    "playerStatus": "Player Status",
+    "confirmAndContinue": "Confirm & Continue",
+    "notAllPlayersRevealed": "Not all players ready ({revealed}/{total})"
   },
   "Common": {
-    "impostorLogo": "Impostor Logo"
+    "impostorLogo": "Impostor Logo",
+    "you": "You",
+    "host": "Host"
+  },
+  "ResultsPhase": {
+    "results": "Results",
+    "theWordWas": "The Word Was",
+    "newGame": "New Game",
+    "playAgain": "Play Again",
+    "category": "Category",
+    "impostor": "Impostor",
+    "impostors": "Impostors",
+    "backToMenu": "Back to Menu",
+    "returnToMenu": "Returning to game menu",
+    "waitingForHost": "Waiting for host...",
+    "restartingGame": "Restarting game...",
+    "gameRestarted": "Game restarted!",
+    "votingResults": "Voting Results",
+    "votes": "votes",
+    "roundWinners": "Round Winners",
+    "leaderboard": "Leaderboard",
+    "failedToRestartGame": "Failed to restart game",
+    "failedToGenerateWord": "Failed to generate new word",
+    "failedToCloseRoom": "Failed to close room",
+    "failedToParseError": "Failed to parse error",
+    "pleaseTryAgain": "Please try again",
+    "noCategoryAvailable": "No category available",
+    "noWordsReturned": "No words returned from API"
   }
 }

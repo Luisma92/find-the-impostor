@@ -24,6 +24,7 @@ export default function MultiplayerWordRevealPhase() {
     useGameStore();
   const t = useTranslations("WordRevealPhase");
   const tReveal = useTranslations("MultiplayerWordReveal");
+  const tCommon = useTranslations("Common");
   const [isCardFlipped, setIsCardFlipped] = useState(false);
   const [randomHint, setRandomHint] = useState<string>("");
   const [allRevealed, setAllRevealed] = useState(false);
@@ -178,8 +179,10 @@ export default function MultiplayerWordRevealPhase() {
         })),
       });
       toast.error(
-        tReveal("notAllPlayersRevealed") ||
-          `Not all players ready (${revealedCount}/${gameState.players.length})`,
+        tReveal("notAllPlayersRevealed", {
+          revealed: revealedCount,
+          total: gameState.players.length,
+        }),
       );
       return;
     }
@@ -223,7 +226,7 @@ export default function MultiplayerWordRevealPhase() {
           <div className="space-y-3">
             <div className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-4">
               <h3 className="mb-3 text-sm font-semibold text-zinc-400">
-                Players Ready
+                {tReveal("playersReady")}
               </h3>
               <div className="space-y-2">
                 {gameState.players.map(player => (
@@ -235,12 +238,12 @@ export default function MultiplayerWordRevealPhase() {
                       {player.name}
                       {player.id === currentPlayerId && (
                         <span className="ml-2 text-xs text-zinc-500">
-                          (You)
+                          ({tCommon("you")})
                         </span>
                       )}
                       {player.id === gameState.hostId && (
                         <span className="ml-2 text-xs text-purple-400">
-                          (Host)
+                          ({tCommon("host")})
                         </span>
                       )}
                     </span>
@@ -294,7 +297,7 @@ export default function MultiplayerWordRevealPhase() {
 
           <div className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-4">
             <h3 className="mb-3 text-sm font-semibold text-zinc-400">
-              Player Status
+              {tReveal("playerStatus")}
             </h3>
             <div className="space-y-2">
               {gameState.players.map(player => (
@@ -305,7 +308,9 @@ export default function MultiplayerWordRevealPhase() {
                   <span className="text-white">
                     {player.name}
                     {player.id === currentPlayerId && (
-                      <span className="ml-2 text-xs text-zinc-500">(You)</span>
+                      <span className="ml-2 text-xs text-zinc-500">
+                        ({tCommon("you")})
+                      </span>
                     )}
                   </span>
                   {player.hasRevealed ? (
@@ -329,9 +334,7 @@ export default function MultiplayerWordRevealPhase() {
       <div className="mx-auto max-w-md space-y-8">
         <div className="space-y-2 text-center">
           <h2 className="text-3xl font-bold">{currentPlayer.name}</h2>
-          <p className="text-sm text-zinc-400">
-            Tap the card to reveal your role
-          </p>
+          <p className="text-sm text-zinc-400">{tReveal("tapCardToReveal")}</p>
         </div>
 
         <div className="relative">
@@ -361,7 +364,7 @@ export default function MultiplayerWordRevealPhase() {
                         </div>
                         <div className="space-y-2">
                           <p className="text-purple text-3xl font-light tracking-wide">
-                            IMPOSTOR
+                            {t("impostor").toUpperCase()}
                           </p>
                         </div>
 
@@ -415,7 +418,7 @@ export default function MultiplayerWordRevealPhase() {
               onClick={handleConfirm}
               className="w-full rounded-xl bg-green-600 py-6 text-lg font-medium text-white transition-all duration-200 hover:bg-green-700"
             >
-              Confirm & Continue
+              {tReveal("confirmAndContinue")}
             </Button>
           )}
         </div>
