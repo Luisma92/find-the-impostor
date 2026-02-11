@@ -10,6 +10,7 @@ export interface Player {
   role: "player" | "impostor";
   isConnected?: boolean;
   hasRevealed?: boolean;
+  wins?: number; // Track wins for this player in the current room
 }
 
 export interface WordWithHints {
@@ -26,8 +27,21 @@ export interface WordSet {
   usageCount?: number;
 }
 
+export interface Vote {
+  voterId: string; // Player who voted
+  votedForId: string; // Player being voted for
+}
+
+export interface VotingResult {
+  playerId: string;
+  playerName: string;
+  voteCount: number;
+  isImpostor: boolean;
+  correctVote: boolean; // Whether they voted correctly
+}
+
 export interface GameState {
-  phase: "setup" | "wordreveal" | "discussion" | "results";
+  phase: "setup" | "wordreveal" | "discussion" | "voting" | "results";
   players: Player[];
   totalPlayers: number;
   impostorCount: number;
@@ -44,6 +58,9 @@ export interface GameState {
   hostId?: string;
   isMultiplayer?: boolean;
   startingPlayerId?: string; // Player who starts the discussion phase
+  votes?: Vote[]; // Current votes
+  votingResults?: VotingResult[]; // Results of the voting
+  winners?: string[]; // Array of player IDs who won this round
 }
 
 // Multiplayer types
