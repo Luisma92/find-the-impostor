@@ -152,7 +152,7 @@ export default function MultiplayerSetupPhase({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="border-zinc-700 bg-zinc-900">
-                  {Array.from({ length: 8 }, (_, i) => i + 3).map(num => (
+                  {Array.from({ length: 28 }, (_, i) => i + 3).map(num => (
                     <SelectItem
                       key={num}
                       value={num.toString()}
